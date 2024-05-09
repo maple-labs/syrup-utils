@@ -37,7 +37,6 @@ contract SyrupRouter is ISyrupRouter {
     }
 
     function depositWithPermit(
-        address owner_,
         uint256 amount_,
         uint256 deadline_,
         uint8   v_,
@@ -45,8 +44,14 @@ contract SyrupRouter is ISyrupRouter {
         bytes32 s_,
         bytes32 depositData_
     ) external override returns (uint256 shares_) {
-        IERC20Like(asset).permit(owner_, address(this), amount_, deadline_, v_, r_, s_);
-        shares_ = _deposit(owner_, amount_, depositData_);
+        address asset_ = asset;
+        uint256 allowance_ = IERC20Like(asset_).allowance(msg.sender, address(this));
+
+        if (allowance_ < amount_) {
+            IERC20Like(asset_).permit(msg.sender, address(this), amount_, deadline_, v_, r_, s_);
+        }
+
+        shares_ = _deposit(msg.sender, amount_, depositData_);
     }
 
     function _deposit(address owner_, uint256 amount_, bytes32 depositData_) internal returns (uint256 shares_) {

@@ -27,7 +27,6 @@ interface ISyrupRouter {
 
     /**
      *  @dev    Does a ERC4626 `deposit` into a Maple Pool with a ERC-2612 `permit`.
-     *  @param  owner      The receiver of the shares.
      *  @param  amount     The amount of assets to deposit.
      *  @param  deadline   The timestamp after which the `permit` signature is no longer valid.
      *  @param  v          ECDSA signature v component.
@@ -36,7 +35,7 @@ interface ISyrupRouter {
      *  @param depositData Optional deposit data.
      *  @return shares     The amount of shares minted.
      */
-    function depositWithPermit(address owner, uint256 amount, uint256 deadline, uint8 v, bytes32 r, bytes32 s, bytes32 depositData)
+    function depositWithPermit(uint256 amount, uint256 deadline, uint8 v, bytes32 r, bytes32 s, bytes32 depositData)
         external returns (uint256 shares);
 
     /**

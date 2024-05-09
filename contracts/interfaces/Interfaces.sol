@@ -3,6 +3,8 @@ pragma solidity 0.8.7;
 
 interface IERC20Like {
 
+    function allowance(address owner, address spender) external view returns (uint256 allowance);
+
     function approve(address spender, uint256 amount) external returns (bool success);
 
     function permit(address owner, address spender, uint amount, uint deadline, uint8 v, bytes32 r, bytes32 s) external;
