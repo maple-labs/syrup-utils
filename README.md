@@ -1,9 +1,9 @@
 # Syrup Router
 
-![CI](https://github.com/maple-labs/syrup-router-private/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/maple-labs/syrup-router/actions/workflows/ci.yml/badge.svg)
 [![GitBook - Documentation](https://img.shields.io/badge/GitBook-Documentation-orange?logo=gitbook&logoColor=white)](https://syrup.gitbook.io/syrup)
 [![Foundry][foundry-badge]][foundry]
-[![License: BUSL 1.1](https://img.shields.io/badge/License-BUSL%201.1-blue.svg)](https://github.com/maple-labs/syrup-router-private/blob/main/LICENSE)
+[![License: BUSL 1.1](https://img.shields.io/badge/License-BUSL%201.1-blue.svg)](https://github.com/maple-labs/syrup-router/blob/main/LICENSE)
 
 [foundry]: https://getfoundry.sh/
 [foundry-badge]: https://img.shields.io/badge/Built%20with-Foundry-FFDB1C.svg
@@ -23,8 +23,8 @@ Versions of dependencies can be checked with `git submodule status`.
 This project was built using [Foundry](https://book.getfoundry.sh/). Refer to installation instructions [here](https://github.com/foundry-rs/foundry#installation).
 
 ```sh
-git clone git@github.com:maple-labs/syrup-router-private.git
-cd syrup-router-private
+git clone git@github.com:maple-labs/syrup-router.git
+cd syrup-router
 forge install
 ```
 
@@ -32,7 +32,7 @@ forge install
 
 | Auditor | Report link |
 |---|---|
-| ThreeSigma | [ThreeSigma-MapleSyrupRouter.pdf](https://github.com/maple-labs/syrup-router-private/blob/main/audits/ThreeSigma-MapleSyrupRouter.pdf) |
+| ThreeSigma | [ThreeSigma-MapleSyrupRouter.pdf](https://github.com/maple-labs/syrup-router/blob/main/audits/ThreeSigma-MapleSyrupRouter.pdf) |
 
 
 ## Bug Bounty
@@ -50,5 +50,5 @@ with digital assets.
 ---
 
 <p align="center">
-  <img src="https://github.com/maple-labs/syrup-router-private/assets/59924029/cfd855e7-82ad-41ec-b4ac-bd42c2a539c5" height="100" />
+  <img src="https://github.com/maple-labs/syrup-router/assets/16119563/383319bd-2bba-4574-9e9f-375f391cd69b" height="100" />
 </p>
