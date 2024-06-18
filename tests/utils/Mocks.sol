@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity 0.8.7;
+pragma solidity ^0.8.0;
 
 import { MockERC20 as BaseMockERC20 } from "../../modules/erc20/contracts/test/mocks/MockERC20.sol";
 
@@ -43,6 +43,18 @@ contract MockERC20 is BaseMockERC20 {
 
     function permit(address owner_, address spender_, uint amount_, uint deadline_, uint8 v_, bytes32 r_, bytes32 s_) public override {
         super.permit(owner_, spender_, amount_, deadline_, v_, r_, s_);
+    }
+
+}
+
+contract MockGlobals {
+
+    address public governor;
+    address public operationalAdmin;
+
+    constructor(address governor_, address operationalAdmin_) {
+        governor = governor_;
+        operationalAdmin = operationalAdmin_;
     }
 
 }
