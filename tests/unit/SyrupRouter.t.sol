@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity 0.8.7;
+pragma solidity ^0.8.0;
 
 import { console2 as console, Test, Vm } from "../../modules/forge-std/src/Test.sol";
 

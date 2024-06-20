@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity 0.8.7;
+pragma solidity ^0.8.0;
 
 interface IERC20Like {
 
@@ -12,6 +12,14 @@ interface IERC20Like {
     function transfer(address recipient, uint256 amount) external returns (bool success);
 
     function transferFrom(address owner, address recipient, uint256 amount) external returns (bool success);
+
+}
+
+interface IGlobalsLike {
+
+    function governor() external view returns (address governor);
+
+    function operationalAdmin() external view returns (address operationalAdmin);
 
 }
 
