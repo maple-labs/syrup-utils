@@ -19,6 +19,7 @@ contract SyrupDrip is ISyrupDrip {
     bytes32 public override root;
 
     uint256 public override deadline;
+    uint256 public override maxId;
 
     mapping(uint256 => uint256) public override bitmaps;
 
@@ -51,14 +52,15 @@ contract SyrupDrip is ISyrupDrip {
     /*** External Functions                                                                                                             ***/
     /**************************************************************************************************************************************/
 
-    // TODO: Consider adding a `minId` when creating a new allocation, this would prevent id's from old allocations ever being reused.
-    function allocate(bytes32 root_, uint256 deadline_) external override onlyProtocolAdmins {
+    function allocate(bytes32 root_, uint256 deadline_, uint256 maxId_) external override onlyProtocolAdmins {
         require(deadline_ >= block.timestamp, "SD:A:INVALID_DEADLINE");
+        require(maxId_ >= maxId,              "SD:A:INVALID_MAX_ID");
 
         root     = root_;
         deadline = deadline_;
+        maxId    = maxId_;
 
-        emit Allocated(root_, deadline_);
+        emit Allocated(root_, deadline_, maxId_);
     }
 
     function claim(uint256 id_, address account_, uint256 amount_, bytes32[] calldata proof_) external override {

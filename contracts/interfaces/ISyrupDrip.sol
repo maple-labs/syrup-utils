@@ -11,8 +11,9 @@ interface ISyrupDrip {
      *  @dev   Emitted when new token allocations have been set.
      *  @param root     Root of the Merkle tree containing the new token allocations.
      *  @param deadline Deadline for claiming the allocations.
+     *  @param maxId    Maximum unique identifier of all the token allocations.
      */
-    event Allocated(bytes32 indexed root, uint256 deadline);
+    event Allocated(bytes32 indexed root, uint256 deadline, uint256 maxId);
 
     /**
      *  @dev   Emitted when a token allocation has been claimed.
@@ -35,12 +36,13 @@ interface ISyrupDrip {
 
     /**
      *  @dev   Sets new token allocations.
-     *         This will cancel all of the existing token allocations.
+     *         This will cancel all of the current token allocations.
      *         Can only be called by the protocol admins.
      *  @param root     Root of the Merkle tree containing the token allocations.
      *  @param deadline Timestamp after which tokens can no longer be claimed.
+     *  @param maxId    Maximum unique identifier of all the token allocations.
      */
-    function allocate(bytes32 root, uint256 deadline) external;
+    function allocate(bytes32 root, uint256 deadline, uint256 maxId) external;
 
     /**
      *  @dev   Claims a token allocation.
@@ -90,6 +92,12 @@ interface ISyrupDrip {
      *  @return globals Address of the `MapleGlobals` contract.
      */
     function globals() external view returns (address globals);
+
+    /**
+     *  @dev    Returns the maximum identifier of all the current token allocations.
+     *  @return maxId Maximum identifier of all the current token allocations.
+     */
+    function maxId() external view returns (uint256 maxId);
 
     /**
      *  @dev    Returns the root of the Merkle tree containing the current token allocations.

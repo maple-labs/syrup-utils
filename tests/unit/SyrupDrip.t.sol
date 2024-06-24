@@ -9,7 +9,7 @@ import { MockERC20, MockGlobals } from "../utils/Mocks.sol";
 
 contract SyrupDripTestBase is Test {
 
-    event Allocated(bytes32 indexed root, uint256 deadline);
+    event Allocated(bytes32 indexed root, uint256 deadline, uint256 maxId);
     event Claimed(uint256 indexed id, address indexed account, uint256 amount);
     event Reclaimed(address indexed account, uint256 amount);
 
@@ -55,44 +55,56 @@ contract SyrupDripAllocateTests is SyrupDripTestBase {
     bytes32 root = 0x5a330af1653e87ea30d8bf559f0288a1268a5f87de5bb138c321b95c1fdf62b7;
 
     uint256 deadline = block.timestamp + 30 days;
+    uint256 maxId    = 3;
 
     function test_allocate_notAuthorized() external {
         vm.expectRevert("SD:NOT_AUTHORIZED");
-        drip.allocate(root, deadline);
+        drip.allocate(root, deadline, maxId);
     }
 
     function test_allocate_expiredDeadline_governor() external {
         vm.prank(governor);
         vm.expectRevert("SD:A:INVALID_DEADLINE");
-        drip.allocate(root, block.timestamp - 1 seconds);
+        drip.allocate(root, block.timestamp - 1 seconds, maxId);
     }
 
     function test_allocate_expiredDeadline_operationalAdmin() external {
         vm.prank(operationalAdmin);
         vm.expectRevert("SD:A:INVALID_DEADLINE");
-        drip.allocate(root, block.timestamp - 1 seconds);
+        drip.allocate(root, block.timestamp - 1 seconds, maxId);
+    }
+
+    function test_allocate_invalidMaxId() external {
+        vm.prank(operationalAdmin);
+        drip.allocate(root, deadline, maxId);
+
+        vm.prank(operationalAdmin);
+        vm.expectRevert("SD:A:INVALID_MAX_ID");
+        drip.allocate(root, deadline, maxId - 1);
     }
 
     function test_allocate_success_governor() external {
         vm.expectEmit();
-        emit Allocated(root, deadline);
+        emit Allocated(root, deadline, maxId);
 
         vm.prank(governor);
-        drip.allocate(root, deadline);
+        drip.allocate(root, deadline, maxId);
 
         assertEq(drip.root(),     root);
         assertEq(drip.deadline(), deadline);
+        assertEq(drip.maxId(),    maxId);
     }
 
     function test_allocate_success_operationalAdmin() external {
         vm.expectEmit();
-        emit Allocated(root, deadline);
+        emit Allocated(root, deadline, maxId);
 
         vm.prank(operationalAdmin);
-        drip.allocate(root, deadline);
+        drip.allocate(root, deadline, maxId);
 
         assertEq(drip.root(),     root);
         assertEq(drip.deadline(), deadline);
+        assertEq(drip.maxId(),    maxId);
     }
 
 }
@@ -118,6 +130,7 @@ contract SyrupDripClaimTests is SyrupDripTestBase {
 
     uint256 deadline = block.timestamp + 30 days;
     uint256 funding  = 30e18;
+    uint256 maxId    = 1337;
 
     uint256   id_chad      = 0;
     address   address_chad = 0x253553366Da8546fC250F225fe3d25d0C782303b;
@@ -180,7 +193,7 @@ contract SyrupDripClaimTests is SyrupDripTestBase {
 
         // Set up new token allocations.
         vm.prank(operationalAdmin);
-        drip.allocate(root, deadline);
+        drip.allocate(root, deadline, maxId);
     }
 
     function test_claim_alreadyClaimed() external {
