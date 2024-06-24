@@ -11,6 +11,7 @@ contract SyrupDripTestBase is Test {
 
     event Allocated(bytes32 indexed root, uint256 deadline);
     event Claimed(uint256 indexed id, address indexed account, uint256 amount);
+    event Reclaimed(address indexed account, uint256 amount);
 
     address governor;
     address operationalAdmin;
@@ -384,6 +385,59 @@ contract SyrupDripClaimTests is SyrupDripTestBase {
         drip.claim(id_duplicate, address_duplicate, amount_duplicate, proof_duplicate);
 
         assertEq(id_habibi, id_duplicate);
+    }
+
+}
+
+contract SyrupDripReclaimTests is SyrupDripTestBase {
+
+    address treasury = makeAddr("treasury");
+
+    uint256 balance = 5e18;
+
+    function setUp() public override {
+        super.setUp();
+
+        asset.mint(address(drip), balance);
+    }
+
+    function test_reclaim_notAuthorized() external {
+        vm.expectRevert("SD:NOT_AUTHORIZED");
+        drip.reclaim(treasury, balance);
+    }
+
+    function test_reclaim_transferFail() external {
+        vm.prank(governor);
+        vm.expectRevert("SD:R:TRANSFER_FAIL");
+        drip.reclaim(treasury, balance + 1);
+    }
+
+    function test_reclaim_success_governor() external {
+        vm.expectEmit();
+        emit Reclaimed(treasury, balance);
+
+        assertEq(asset.balanceOf(address(drip)),     balance);
+        assertEq(asset.balanceOf(address(treasury)), 0);
+
+        vm.prank(governor);
+        drip.reclaim(treasury, balance);
+
+        assertEq(asset.balanceOf(address(drip)),     0);
+        assertEq(asset.balanceOf(address(treasury)), balance);
+    }
+
+    function test_reclaim_success_operationalAdmin() external {
+        vm.expectEmit();
+        emit Reclaimed(treasury, balance);
+
+        assertEq(asset.balanceOf(address(drip)),     balance);
+        assertEq(asset.balanceOf(address(treasury)), 0);
+
+        vm.prank(operationalAdmin);
+        drip.reclaim(treasury, balance);
+
+        assertEq(asset.balanceOf(address(drip)),     0);
+        assertEq(asset.balanceOf(address(treasury)), balance);
     }
 
 }

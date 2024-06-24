@@ -76,6 +76,13 @@ contract SyrupDrip is ISyrupDrip {
         emit Claimed(id_, account_, amount_);
     }
 
+    function reclaim(address to_, uint256 amount_) external override onlyProtocolAdmins {
+        require(amount_ != 0,                              "SD:R:ZERO_AMOUNT");
+        require(ERC20Helper.transfer(asset, to_, amount_), "SD:R:TRANSFER_FAIL");
+
+        emit Reclaimed(to_, amount_);
+    }
+
     /**************************************************************************************************************************************/
     /*** Internal Functions                                                                                                             ***/
     /**************************************************************************************************************************************/

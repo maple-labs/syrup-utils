@@ -27,7 +27,7 @@ interface ISyrupDrip {
      *  @param account Address of the account the tokens were sent to.
      *  @param amount  Amount of reclaimed tokens.
      */
-    // event Reclaimed(address indexed account, uint256 amount);
+    event Reclaimed(address indexed account, uint256 amount);
 
     /**************************************************************************************************************************************/
     /*** State-Changing Functions                                                                                                       ***/
@@ -60,7 +60,7 @@ interface ISyrupDrip {
      *  @param to     Address of the token recipient
      *  @param amount Amount of tokens reclaimed.
      */
-    // function reclaim(address to, uint256 amount) external;
+    function reclaim(address to, uint256 amount) external;
 
     /**************************************************************************************************************************************/
     /*** View Functions                                                                                                                 ***/
