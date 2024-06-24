@@ -20,7 +20,7 @@ interface ISyrupDrip {
      *  @param account Address of the account that received the tokens.
      *  @param amount  Amount of received tokens.
      */
-    // event Claimed(uint256 indexed id, address indexed account, uint256 amount);
+    event Claimed(uint256 indexed id, address indexed account, uint256 amount);
 
     /**
      *  @dev   Emitted when tokens are reclaimed from the contract.
@@ -46,13 +46,13 @@ interface ISyrupDrip {
      *  @dev   Claims a token allocation.
      *         Can only claim a token allocation once.
      *         Can only be claimed before the deadline expires.
-     *         Can only be claimed by the recipient of the allocation.
      *         Can only be claimed if the Merkle proof is valid.
      *  @param id      Unique identifier of the token allocation.
+     *  @param account Address of the token recipient.
      *  @param amount  Amount of claimed tokens.
      *  @param proof   Proof that the recipient is part of the Merkle tree of token allocations.
      */
-    // function claim(uint256 id, uint256 amount, bytes32[] calldata proof) external;
+    function claim(uint256 id, address account, uint256 amount, bytes32[] calldata proof) external;
 
     /**
      *  @dev   Reclaims tokens from the contract.
@@ -70,14 +70,14 @@ interface ISyrupDrip {
      *  @dev    Returns the address of the claimable ERC-20 token.
      *  @return asset Address of the ERC-20 token.
      */
-    // function asset() external view returns (address asset);
+    function asset() external view returns (address asset);
 
     /**
      *  @dev    Returns a bitmap that defines which token allocations have been claimed.
      *  @param  index  Index of the bitmap array.
      *  @return bitmap Bitmap of claimed token allocations.
      */
-    // function bitmaps(uint256 index) external view returns (uint256 bitmap);
+    function bitmaps(uint256 index) external view returns (uint256 bitmap);
 
     /**
      *  @dev    Returns the deadline for the current token allocations.
@@ -89,7 +89,7 @@ interface ISyrupDrip {
      *  @dev    Returns the address of the `MapleGlobals` contract.
      *  @return globals Address of the `MapleGlobals` contract.
      */
-    // function globals() external view returns (address globals);
+    function globals() external view returns (address globals);
 
     /**
      *  @dev    Returns the root of the Merkle tree containing the current token allocations.
