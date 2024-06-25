@@ -109,16 +109,9 @@ contract SyrupDripAllocateTests is SyrupDripTestBase {
 
 }
 
-// TODO: Add test case where we:
-// 1. Allocate a new Merkle tree.
-// 2. Claim a token allocation.
-// 3. Allocate a new Merkle tree.
-// 4. Attempt to claim an allocation from the prior merkle tree.
-// 5. Ensure the claim fails.
-// 6. Ensure the claim succeeds when using the new merkle tree.
 contract SyrupDripClaimTests is SyrupDripTestBase {
 
-    // Merkle tree used in tests was generated from these 6 token allocations:
+    // First Merkle tree used in tests was generated from these 6 token allocations:
     // chad      = { id: 0,    address: 0x253553366Da8546fC250F225fe3d25d0C782303b, amount: 1000000000000000000  }
     // degen     = { id: 1337, address: 0x0ac850A303169bD762a06567cAad02a8e680E7B3, amount: 15000000000000000000 }
     // habibi    = { id: 2,    address: 0xA8cc612Ecb2E853d3A882b0F9cf5357C2D892aDb, amount: 4500000000000000000  }
@@ -126,7 +119,12 @@ contract SyrupDripClaimTests is SyrupDripTestBase {
     // zero      = { id: 4,    address: 0x86726BE6c9a332f10C16f9431730AFc233Db8953, amount: 0                    }
     // duplicate = { id: 2,    address: 0xE87753eB91D6A61Ea342bB9044A97764366cc7b2, amount: 1000000000000000000  }
 
-    bytes32 root = 0xec8d1cd4e8b553e782cc92c706d9b0b78017848ed8957571ec391985f59221a0;
+    // Second Merkle tree used in tests (2 allocations):
+    // next  = { id: 6, address: 0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5, amount: 1000000000000000000 }
+    // other = { id: 7, address: 0x8DC1A1493F7A94e89599A2153c994Ae29F6aFf0f, amount: 1500000000000000000 }
+
+    bytes32 root  = 0xec8d1cd4e8b553e782cc92c706d9b0b78017848ed8957571ec391985f59221a0;
+    bytes32 root2 = 0xcbe80ed3b7bd00718abe861ae242390fa7e679b8d0c0eaac9de4066f9661b15d;
 
     uint256 deadline = block.timestamp + 30 days;
     uint256 funding  = 30e18;
@@ -162,6 +160,16 @@ contract SyrupDripClaimTests is SyrupDripTestBase {
     uint256   amount_duplicate  = 1e18;
     bytes32[] proof_duplicate;
 
+    uint256   id_next      = 6;
+    address   address_next = 0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5;
+    uint256   amount_next  = 1e18;
+    bytes32[] proof_next;
+
+    uint256   id_other      = 7;
+    address   address_other = 0x8DC1A1493F7A94e89599A2153c994Ae29F6aFf0f;
+    uint256   amount_other  = 1.5e18;
+    bytes32[] proof_other;
+
     function setUp() public override {
         super.setUp();
 
@@ -187,6 +195,10 @@ contract SyrupDripClaimTests is SyrupDripTestBase {
         proof_duplicate.push(0x5cba589f80b79632daa3abc01a5b91e6989c200590fbe5d88dc9f04de10e1ca8);
         proof_duplicate.push(0x41e514c722940c8d945ceea6880e7081710abee3f504f98fba471c9862b4b6bd);
         proof_duplicate.push(0x353ef930c6760544b8ef7eb9975e8ff35f02b2c3f193be48f583b1fcb7b8960d);
+
+        proof_next.push(0x0462c77b29bf2193b1ed83100cd962fce8b99b4717470452c0d136cfc96e8d0c);
+
+        proof_other.push(0xd37a9e054d47f9a7b9246c9e7fd2b60c45b47f7d1a786a144381dc50498c39f3);
 
         // Deposit tokens in preparation of claiming.
         asset.mint(address(drip), funding);
@@ -398,6 +410,48 @@ contract SyrupDripClaimTests is SyrupDripTestBase {
         drip.claim(id_duplicate, address_duplicate, amount_duplicate, proof_duplicate);
 
         assertEq(id_habibi, id_duplicate);
+    }
+
+    function test_claim_success_updatedAllocation() external {
+        assertEq(asset.balanceOf(address(drip)),           funding);
+        assertEq(asset.balanceOf(address(address_habibi)), 0);
+        assertEq(asset.balanceOf(address(address_next)),   0);
+
+        assertEq(drip.bitmaps(0), 0);
+        assertEq(drip.bitmaps(1), 0);
+
+        vm.expectEmit();
+        emit Claimed(id_habibi, address_habibi, amount_habibi);
+
+        drip.claim(id_habibi, address_habibi, amount_habibi, proof_habibi);
+
+        assertEq(asset.balanceOf(address(drip)),           funding - amount_habibi);
+        assertEq(asset.balanceOf(address(address_habibi)), amount_habibi);
+        assertEq(asset.balanceOf(address(address_next)),   0);
+
+        assertEq(drip.bitmaps(0), 2 ** id_habibi);
+        assertEq(drip.bitmaps(1), 0);
+
+        // Update token allocations.
+        vm.prank(operationalAdmin);
+        drip.allocate(root2, deadline, maxId);
+
+        // Fail to claim from the old allocations.
+        vm.expectRevert("SD:C:INVALID_PROOF");
+        drip.claim(id_degen, address_degen, amount_degen, proof_degen);
+
+        // Succeed claiming from the new allocations.
+        vm.expectEmit();
+        emit Claimed(id_next, address_next, amount_next);
+
+        drip.claim(id_next, address_next, amount_next, proof_next);
+
+        assertEq(asset.balanceOf(address(drip)),           funding - amount_habibi - amount_next);
+        assertEq(asset.balanceOf(address(address_habibi)), amount_habibi);
+        assertEq(asset.balanceOf(address(address_next)),   amount_next);
+
+        assertEq(drip.bitmaps(0), 2 ** id_habibi + 2 ** id_next);
+        assertEq(drip.bitmaps(1), 0);
     }
 
 }
