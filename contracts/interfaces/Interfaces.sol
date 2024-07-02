@@ -50,3 +50,9 @@ interface IPoolPermissionManagerLike {
     function setLenderBitmaps(address[] calldata lenders, uint256[] calldata bitmaps) external;
 
 }
+
+interface IStakedSyrupLike {
+
+    function deposit(uint256 assets, address receiver) external returns (uint256 shares);
+
+}

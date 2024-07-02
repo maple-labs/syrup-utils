@@ -10,3 +10,6 @@
 [submodule "modules/open-zeppelin"]
 	path = modules/open-zeppelin
 	url = git@github.com:OpenZeppelin/openzeppelin-contracts.git
+[submodule "modules/xmpl"]
+	path = modules/xmpl
+	url = git@github.com:maple-labs/xMPL.git

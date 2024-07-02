@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity ^0.8.0;
+pragma solidity 0.8.20;
 
 import { ERC20Helper } from "../modules/erc20-helper/src/ERC20Helper.sol";
 import { MerkleProof } from "../modules/open-zeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
-import { IGlobalsLike } from "./interfaces/Interfaces.sol";
+import { IGlobalsLike, IStakedSyrupLike } from "./interfaces/Interfaces.sol";
 import { ISyrupDrip }   from "./interfaces/ISyrupDrip.sol";
 
 contract SyrupDrip is ISyrupDrip {
@@ -15,6 +15,7 @@ contract SyrupDrip is ISyrupDrip {
 
     address public override asset;
     address public override globals;
+    address public override stakedSyrup;
 
     bytes32 public override root;
 
@@ -27,9 +28,13 @@ contract SyrupDrip is ISyrupDrip {
     /*** Constructor                                                                                                                    ***/
     /**************************************************************************************************************************************/
 
-    constructor(address asset_, address globals_) {
-        asset   = asset_;
-        globals = globals_;
+    constructor(address asset_, address globals_, address stakedSyrup_) {
+        asset       = asset_;
+        globals     = globals_;
+        stakedSyrup = stakedSyrup_;
+
+        // Approve the staked syrup contract to transfer the asset.
+        require(ERC20Helper.approve(asset_, stakedSyrup_, type(uint256).max), "SD:C:APPROVAL_FAILED");
     }
 
     /**************************************************************************************************************************************/
@@ -63,19 +68,16 @@ contract SyrupDrip is ISyrupDrip {
         emit Allocated(root_, deadline_, maxId_);
     }
 
-    function claim(uint256 id_, address account_, uint256 amount_, bytes32[] calldata proof_) external override {
-        require(!_isClaimed(id_),            "SD:C:ALREADY_CLAIMED");
-        require(block.timestamp <= deadline, "SD:C:EXPIRED_DEADLINE");
+    function claim(uint256 id_, address owner_, uint256 amount_, bytes32[] calldata proof_) external override {
+        _claim(id_, owner_, owner_, amount_, proof_);
+    }
 
-        bytes32 leaf_ = keccak256(bytes.concat(keccak256(abi.encode(id_, account_, amount_))));
+    function claimAndStake(uint256 id_, address owner_, uint256 amount_, bytes32[] calldata proof_) external override {
+        _claim(id_, owner_, address(this), amount_, proof_);
 
-        require(MerkleProof.verify(proof_, root, leaf_), "SD:C:INVALID_PROOF");
+        uint256 shares_ = IStakedSyrupLike(stakedSyrup).deposit(amount_, owner_);
 
-        _setClaimed(id_);
-
-        require(ERC20Helper.transfer(asset, account_, amount_), "SD:C:TRANSFER_FAIL");
-
-        emit Claimed(id_, account_, amount_);
+        emit Staked(id_, owner_, amount_, shares_);
     }
 
     function reclaim(address to_, uint256 amount_) external override onlyProtocolAdmins {
@@ -88,6 +90,21 @@ contract SyrupDrip is ISyrupDrip {
     /**************************************************************************************************************************************/
     /*** Internal Functions                                                                                                             ***/
     /**************************************************************************************************************************************/
+
+    function _claim(uint256 id_, address owner_, address recipient_, uint256 amount_, bytes32[] calldata proof_) internal {
+        require(!_isClaimed(id_),            "SD:C:ALREADY_CLAIMED");
+        require(block.timestamp <= deadline, "SD:C:EXPIRED_DEADLINE");
+
+        bytes32 leaf_ = keccak256(bytes.concat(keccak256(abi.encode(id_, owner_, amount_))));
+
+        require(MerkleProof.verify(proof_, root, leaf_), "SD:C:INVALID_PROOF");
+
+        _setClaimed(id_);
+
+        require(ERC20Helper.transfer(asset, recipient_, amount_), "SD:C:TRANSFER_FAIL");
+
+        emit Claimed(id_, owner_, amount_);
+    }
 
     // TODO: Consider where comments for internal functions should go
     // Checks if a token allocation has already been claimed.

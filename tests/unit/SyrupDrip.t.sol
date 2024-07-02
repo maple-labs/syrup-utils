@@ -6,18 +6,21 @@ import { console2 as console, Test } from "../../modules/forge-std/src/Test.sol"
 import { SyrupDrip } from "../../contracts/SyrupDrip.sol";
 
 import { MockERC20, MockGlobals } from "../utils/Mocks.sol";
+import { IStakedSyrupLike }       from "../utils/Interfaces.sol";
 
 contract SyrupDripTestBase is Test {
 
     event Allocated(bytes32 indexed root, uint256 deadline, uint256 maxId);
     event Claimed(uint256 indexed id, address indexed account, uint256 amount);
     event Reclaimed(address indexed account, uint256 amount);
+    event Staked(uint256 indexed id, address indexed account, uint256 assets, uint256 shares);
 
     address governor;
     address operationalAdmin;
 
-    MockERC20   asset;
-    MockGlobals globals;
+    IStakedSyrupLike stakedSyrup;
+    MockERC20        asset;
+    MockGlobals      globals;
 
     SyrupDrip drip;
 
@@ -28,7 +31,13 @@ contract SyrupDripTestBase is Test {
         asset   = new MockERC20("SYRUP", "SYRUP", 18);
         globals = new MockGlobals(governor, operationalAdmin);
 
-        drip = new SyrupDrip(address(asset), address(globals));
+        stakedSyrup = IStakedSyrupLike(_deployStakedSyrup());
+
+        drip = new SyrupDrip(address(asset), address(globals), address(stakedSyrup));
+    }
+
+    function _deployStakedSyrup() internal returns (address deployedAddress){
+        deployedAddress = deployCode("./out/xMPL.sol/xMPL.json", abi.encode("stSyrup", "stSyrup", operationalAdmin, address(asset), 18));
     }
 
 }
@@ -36,10 +45,11 @@ contract SyrupDripTestBase is Test {
 contract SyrupDripConstructorTests is SyrupDripTestBase {
 
     function test_constructor() external {
-        SyrupDrip drip_ = new SyrupDrip(address(asset), address(globals));
+        SyrupDrip drip_ = new SyrupDrip(address(asset), address(globals), address(stakedSyrup));
 
-        assertEq(drip_.asset(),   address(asset));
-        assertEq(drip_.globals(), address(globals));
+        assertEq(drip_.asset(),       address(asset));
+        assertEq(drip_.globals(),     address(globals));
+        assertEq(drip_.stakedSyrup(), address(stakedSyrup));
 
         assertEq(drip_.root(),     bytes32(0));
         assertEq(drip_.deadline(), uint256(0));
@@ -109,7 +119,7 @@ contract SyrupDripAllocateTests is SyrupDripTestBase {
 
 }
 
-contract SyrupDripClaimTests is SyrupDripTestBase {
+contract SyrupDripClaimTestBase is SyrupDripTestBase {
 
     // First Merkle tree used in tests was generated from these 6 token allocations:
     // chad      = { id: 0,    address: 0x253553366Da8546fC250F225fe3d25d0C782303b, amount: 1000000000000000000  }
@@ -207,6 +217,10 @@ contract SyrupDripClaimTests is SyrupDripTestBase {
         vm.prank(operationalAdmin);
         drip.allocate(root, deadline, maxId);
     }
+
+}
+
+contract SyrupDripClaimTests is SyrupDripClaimTestBase {
 
     function test_claim_alreadyClaimed() external {
         drip.claim(id_habibi, address_habibi, amount_habibi, proof_habibi);
@@ -452,6 +466,157 @@ contract SyrupDripClaimTests is SyrupDripTestBase {
 
         assertEq(drip.bitmaps(0), 2 ** id_habibi + 2 ** id_next);
         assertEq(drip.bitmaps(1), 0);
+    }
+
+}
+
+contract SyrupDripClaimAndStakeTests is SyrupDripClaimTestBase {
+    
+    // Repeating the tests from Claim. Redundant but necessary for the sake of completeness.
+     function test_claimAndStake_alreadyClaimed() external {
+        drip.claimAndStake(id_habibi, address_habibi, amount_habibi, proof_habibi);
+
+        vm.expectRevert("SD:C:ALREADY_CLAIMED");
+        drip.claimAndStake(id_habibi, address_habibi, amount_habibi, proof_habibi);
+    }
+
+    function test_claimAndStake_expiredDeadline() external {
+        vm.warp(deadline + 1 seconds);
+        vm.expectRevert("SD:C:EXPIRED_DEADLINE");
+        drip.claimAndStake(id_habibi, address_habibi, amount_habibi, proof_habibi);
+    }
+
+    function test_claimAndStake_invalidProof_id() external {
+        vm.expectRevert("SD:C:INVALID_PROOF");
+        drip.claimAndStake(id_habibi + 1, address_habibi, amount_habibi, proof_habibi);
+    }
+
+    function test_claimAndStake_invalidProof_account() external {
+        vm.expectRevert("SD:C:INVALID_PROOF");
+        drip.claimAndStake(id_habibi, address_chad, amount_habibi, proof_habibi);
+    }
+
+    function test_claimAndStake_invalidProof_amount() external {
+        vm.expectRevert("SD:C:INVALID_PROOF");
+        drip.claimAndStake(id_habibi, address_habibi, amount_habibi + 1, proof_habibi);
+    }
+
+    function test_claimAndStake_invalidProof_proof() external {
+        proof_habibi[1] = bytes32(uint256(proof_habibi[1]) - 1);
+
+        vm.expectRevert("SD:C:INVALID_PROOF");
+        drip.claimAndStake(id_habibi, address_habibi, amount_habibi, proof_habibi);
+    }
+
+    function test_claimAndStake_transferFail() external {
+        asset.burn(address(drip), funding);
+
+        vm.expectRevert("SD:C:TRANSFER_FAIL");
+        drip.claimAndStake(id_habibi, address_habibi, amount_habibi, proof_habibi);
+    }
+
+    function test_claimAndStake_success_multipleClaims() external {
+        assertEq(asset.balanceOf(address(drip)),           funding);
+        assertEq(asset.balanceOf(address(address_chad)),   0);
+        assertEq(asset.balanceOf(address(address_habibi)), 0);
+
+        assertEq(drip.bitmaps(0), 0);
+        assertEq(drip.bitmaps(1), 0);
+
+        assertEq(stakedSyrup.balanceOf(address_chad),   0);
+        assertEq(stakedSyrup.balanceOf(address_habibi), 0);
+        assertEq(stakedSyrup.balanceOf(address(drip)),  0);
+
+        vm.expectEmit();
+        emit Claimed(id_chad, address_chad, amount_chad);
+
+        vm.expectEmit();
+        emit Staked(id_chad, address_chad, amount_chad, amount_chad);
+
+        vm.expectCall(address(stakedSyrup), abi.encodeWithSelector(IStakedSyrupLike.deposit.selector, amount_chad, address_chad));
+
+        drip.claimAndStake(id_chad, address_chad, amount_chad, proof_chad);
+
+        assertEq(asset.balanceOf(address(drip)),           funding - amount_chad);
+        assertEq(asset.balanceOf(address(address_chad)),   0);
+        assertEq(asset.balanceOf(address(address_habibi)), 0);
+
+        assertEq(drip.bitmaps(0), 2 ** id_chad);
+        assertEq(drip.bitmaps(1), 0);
+
+        assertEq(stakedSyrup.balanceOf(address_chad),   amount_chad);
+        assertEq(stakedSyrup.balanceOf(address_habibi), 0);
+        assertEq(stakedSyrup.balanceOf(address(drip)),  0);
+
+        vm.expectCall(address(stakedSyrup), abi.encodeWithSelector(IStakedSyrupLike.deposit.selector, amount_habibi, address_habibi));
+
+        vm.expectEmit();
+        emit Claimed(id_habibi, address_habibi, amount_habibi);
+
+        vm.expectEmit();
+        emit Staked(id_habibi, address_habibi, amount_habibi, amount_habibi);
+
+        drip.claimAndStake(id_habibi, address_habibi, amount_habibi, proof_habibi);
+
+        assertEq(asset.balanceOf(address(drip)),           funding - amount_chad - amount_habibi);
+        assertEq(asset.balanceOf(address(address_chad)),   0);
+        assertEq(asset.balanceOf(address(address_habibi)), 0);
+
+        assertEq(drip.bitmaps(0), 2 ** id_chad + 2 ** id_habibi);
+        assertEq(drip.bitmaps(1), 0);
+
+        assertEq(stakedSyrup.balanceOf(address_chad),   amount_chad);
+        assertEq(stakedSyrup.balanceOf(address_habibi), amount_habibi);
+        assertEq(stakedSyrup.balanceOf(address(drip)),  0);
+    }
+
+    function test_claimAndStake_success_multipleInstances() external {
+        assertEq(asset.balanceOf(address(drip)),         funding);
+        assertEq(asset.balanceOf(address(address_chad)), 0);
+
+        assertEq(drip.bitmaps(0), 0);
+        assertEq(drip.bitmaps(1), 0);
+
+        assertEq(stakedSyrup.balanceOf(address_chad),   0);
+        assertEq(stakedSyrup.balanceOf(address(drip)),  0);
+
+        vm.expectEmit();
+        emit Claimed(id_chad, address_chad, amount_chad);
+
+        vm.expectEmit();
+        emit Staked(id_chad, address_chad, amount_chad, amount_chad);
+
+        vm.expectCall(address(stakedSyrup), abi.encodeWithSelector(IStakedSyrupLike.deposit.selector, amount_chad, address_chad));
+
+        drip.claimAndStake(id_chad, address_chad, amount_chad, proof_chad);
+
+        assertEq(asset.balanceOf(address(drip)),         funding - amount_chad);
+        assertEq(asset.balanceOf(address(address_chad)), 0);
+
+        assertEq(drip.bitmaps(0), 2 ** id_chad);
+        assertEq(drip.bitmaps(1), 0);
+
+        assertEq(stakedSyrup.balanceOf(address_chad),   amount_chad);
+        assertEq(stakedSyrup.balanceOf(address(drip)),  0);
+
+        vm.expectEmit();
+        emit Claimed(id_chad2, address_chad2, amount_chad2);
+
+        vm.expectEmit();
+        emit Staked(id_chad2, address_chad2, amount_chad2, amount_chad2);
+
+        vm.expectCall(address(stakedSyrup), abi.encodeWithSelector(IStakedSyrupLike.deposit.selector, amount_chad2, address_chad2));
+
+        drip.claimAndStake(id_chad2, address_chad2, amount_chad2, proof_chad2);
+
+        assertEq(asset.balanceOf(address(drip)),         funding - amount_chad - amount_chad2);
+        assertEq(asset.balanceOf(address(address_chad)), 0);
+
+        assertEq(drip.bitmaps(0), 2 ** id_chad + 2 ** id_chad2);
+        assertEq(drip.bitmaps(1), 0);
+
+        assertEq(stakedSyrup.balanceOf(address_chad),   amount_chad + amount_chad2);
+        assertEq(stakedSyrup.balanceOf(address(drip)),  0);
     }
 
 }

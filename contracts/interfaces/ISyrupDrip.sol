@@ -30,6 +30,15 @@ interface ISyrupDrip {
      */
     event Reclaimed(address indexed account, uint256 amount);
 
+    /**
+     *  @dev   Emitted when a token allocation has been claimed and staked.
+     *  @param id      Unique identifier of the token allocation.
+     *  @param account Address of the account that staked.
+     *  @param assets  Amount of assets staked.
+     *  @param shares  Amount of shares minted.
+     */
+    event Staked(uint256 indexed id, address indexed account, uint256 assets, uint256 shares);
+
     /**************************************************************************************************************************************/
     /*** State-Changing Functions                                                                                                       ***/
     /**************************************************************************************************************************************/
@@ -55,6 +64,18 @@ interface ISyrupDrip {
      *  @param proof   Proof that the recipient is part of the Merkle tree of token allocations.
      */
     function claim(uint256 id, address account, uint256 amount, bytes32[] calldata proof) external;
+
+    /**
+     *  @dev   Claims a token allocation and stakes the claimed tokens. 
+     *         Can only claim a token allocation once.
+     *         Can only be claimed before the deadline expires.
+     *         Can only be claimed if the Merkle proof is valid.
+     *  @param id      Unique identifier of the token allocation.
+     *  @param account Address of the token recipient.
+     *  @param amount  Amount of claimed tokens.
+     *  @param proof   Proof that the recipient is part of the Merkle tree of token allocations.
+     */
+    function claimAndStake(uint256 id, address account, uint256 amount, bytes32[] calldata proof) external;
 
     /**
      *  @dev   Reclaims tokens from the contract.
@@ -104,5 +125,11 @@ interface ISyrupDrip {
      *  @return root Root of the Merkle tree.
      */
     function root() external view returns (bytes32 root);
+
+    /**
+     *  @dev    Returns the address of the `StakedSyrup` contract.
+     *  @return stakedSyrup Address of the `StakedSyrup` contract.
+     */
+    function stakedSyrup() external view returns (address stakedSyrup);
 
 }
