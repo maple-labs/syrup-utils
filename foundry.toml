@@ -7,6 +7,7 @@ auto_detect_solc = true           # Automatically detect the solc version
 verbosity        = 3              # The verbosity of tests
 block_timestamp  = 1_622_400_000  # Timestamp for tests (non-zero)
 fuzz_runs        = 100            # Number of fuzz runs
+evm_version      = 'shanghai'     # EVM version to use
 
 [profile.deep]
 fuzz_runs = 1000

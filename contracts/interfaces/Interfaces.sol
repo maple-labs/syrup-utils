@@ -1,9 +1,40 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.0;
 
+interface IBalancerVaultLike {
+
+    enum SwapKind { GIVEN_IN, GIVEN_OUT }
+
+    struct FundManagement {
+        address sender;
+        bool fromInternalBalance;
+        address recipient;
+        bool toInternalBalance;
+    }
+
+    struct SingleSwap {
+        bytes32 poolId;
+        SwapKind kind;
+        address assetIn;
+        address assetOut;
+        uint256 amount;
+        bytes userData;
+    }
+
+    function swap(
+        SingleSwap calldata singleSwap,
+        FundManagement calldata funds,
+        uint256 limit,
+        uint256 deadline
+    ) external returns (uint256 assetDelta);
+
+}
+
 interface IERC20Like {
 
     function allowance(address owner, address spender) external view returns (uint256 allowance);
+
+    function balanceOf(address account) external view returns (uint256 balance);
 
     function approve(address spender, uint256 amount) external returns (bool success);
 
@@ -48,6 +79,19 @@ interface IPoolPermissionManagerLike {
     function permissionAdmins(address account) external view returns (bool isAdmin);
 
     function setLenderBitmaps(address[] calldata lenders, uint256[] calldata bitmaps) external;
+
+}
+
+interface IPSMLike {
+
+    function buyGem(address account, uint256 daiAmount) external;
+
+    function tout() external view returns (uint256 tout);  // This is the fee charged for conversion
+}
+
+interface ISDAILike {
+
+    function redeem(uint256 shares, address receiver, address owner) external returns (uint256 assets);
 
 }
 
