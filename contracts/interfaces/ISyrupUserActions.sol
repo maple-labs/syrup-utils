@@ -8,12 +8,20 @@ interface ISyrupUserActions {
     /**************************************************************************************************************************************/
 
     /**
-     *  @dev    Swaps SyrupUSDC LP token for USDC in a single transaction.
-     *  @param  amountIn   The amount of SyrupUSDC to swap.
-     *  @param  minUsdcOut The minimum amount of USDC to receive.
-     *  @return usdcOut    The amount of USDC received.
+     *  @dev    Swaps SyrupUSDC LP token for DAI in a single transaction.
+     *  @param  syrupUsdcAmountIn The amount of SyrupUSDC to swap.
+     *  @param  minDaiOut         The minimum amount of DAI to receive.
+     *  @return daiOut            The amount of DAI received.
      */
-    function swapToUsdc(uint256 amountIn, uint256 minUsdcOut) external returns (uint256 usdcOut);
+    function swapToDai(uint256 syrupUsdcAmountIn, uint256 minDaiOut) external returns (uint256 daiOut);
+
+    /**
+     *  @dev    Swaps SyrupUSDC LP token for USDC in a single transaction.
+     *  @param  syrupUsdcAmountIn The amount of SyrupUSDC to swap.
+     *  @param  minUsdcOut        The minimum amount of USDC to receive.
+     *  @return usdcOut           The amount of USDC received.
+     */
+    function swapToUsdc(uint256 syrupUsdcAmountIn, uint256 minUsdcOut) external returns (uint256 usdcOut);
 
     /**************************************************************************************************************************************/
     /*** View Functions                                                                                                                 ***/

@@ -27,14 +27,28 @@ contract SyrupUserActions is ISyrupUserActions {
         require(ERC20Helper.approve(DAI, PSM, type(uint256).max),              "SUA:C:DAI_APPROVE_FAIL");
     }
 
-    function swapToUsdc(uint256 amountIn_, uint256 minUsdcOut_) external override returns (uint256 usdcOut_) {
+    function swapToDai(uint256 syrupUsdcAmountIn_, uint256 minDaiOut_) external override returns (uint256 daiOut_) {
         // 1. Pull SyrupUSDC from the user
-        require(ERC20Helper.transferFrom(SYRUP_USDC, msg.sender, address(this), amountIn_), "SUA:STU:TRANSFER_FROM_FAILED");
+        require(ERC20Helper.transferFrom(SYRUP_USDC, msg.sender, address(this), syrupUsdcAmountIn_), "SAU:STD:TRANSFER_FROM_FAILED");
+
+        // 2. Swap into sDAI
+        uint256 sDAIAmount = _swapViaBalancer(syrupUsdcAmountIn_);
+
+        // 3. Redeem sDAI for DAI
+        daiOut_ = _redeemForDAI(sDAIAmount);
+
+        require(daiOut_ >= minDaiOut_,                          "SAU:STD:INSUFFICIENT_DAI");
+        require(ERC20Helper.transfer(DAI, msg.sender, daiOut_), "SAU:STD:TRANSFER_FAILED");
+    }
+
+    function swapToUsdc(uint256 syrupUsdcAmountIn_, uint256 minUsdcOut_) external override returns (uint256 usdcOut_) {
+        // 1. Pull SyrupUSDC from the user
+        require(ERC20Helper.transferFrom(SYRUP_USDC, msg.sender, address(this), syrupUsdcAmountIn_), "SUA:STU:TRANSFER_FROM_FAILED");
 
         // 2. Swap to sDAI
-        uint256 sDAIAmount = _swapViaBalancer(amountIn_);
+        uint256 sDAIAmount = _swapViaBalancer(syrupUsdcAmountIn_);
 
-        //  3. Redeem sDAI for DAI
+        // 3. Redeem sDAI for DAI
         uint256 daiOut = _redeemForDAI(sDAIAmount);
 
         // 4. Swap DAI for USDC using the PSM
