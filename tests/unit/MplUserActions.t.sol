@@ -24,10 +24,10 @@ contract MplUserActionsTestBase is Test {
     uint8   decimals = 18;
     uint256 scalar   = 100;
 
-    uint256 xmplAmount    = 15e18;
-    uint256 mplAmount     = xmplAmount;
-    uint256 syrupAmount   = mplAmount * scalar;
-    uint256 stsyrupAmount = syrupAmount;
+    uint256 xmplIn     = 15e18;
+    uint256 mplIn      = xmplIn;
+    uint256 syrupOut   = mplIn * scalar;
+    uint256 stsyrupOut = syrupOut;
 
     MockMigrator migrator;
     MockERC20    mpl;
@@ -92,82 +92,82 @@ contract MplUserActionsMigrateAndStakeTests is MplUserActionsTestBase {
     }
 
     function test_migrateAndStake_insufficientApproval() external {
-        mpl.mint(sender, mplAmount);
+        mpl.mint(sender, mplIn);
 
         vm.prank(sender);
-        mpl.approve(address(actions), mplAmount - 1);
+        mpl.approve(address(actions), mplIn - 1);
 
         vm.prank(sender);
         vm.expectRevert("MUA:MAS:TRANSFER_FAIL");
-        actions.migrateAndStake(receiver, mplAmount);
+        actions.migrateAndStake(receiver, mplIn);
     }
 
     function test_migrateAndStake_insufficientBalance() external {
-        mpl.mint(sender, mplAmount - 1);
+        mpl.mint(sender, mplIn - 1);
 
         vm.prank(sender);
-        mpl.approve(address(actions), mplAmount);
+        mpl.approve(address(actions), mplIn);
 
         vm.prank(sender);
         vm.expectRevert("MUA:MAS:TRANSFER_FAIL");
-        actions.migrateAndStake(receiver, mplAmount);
+        actions.migrateAndStake(receiver, mplIn);
     }
 
     function test_migrateAndStake_differentReceiver() external {
-        mpl.mint(sender, mplAmount);
+        mpl.mint(sender, mplIn);
 
         vm.prank(sender);
-        mpl.approve(address(actions), mplAmount);
+        mpl.approve(address(actions), mplIn);
 
         vm.expectEmit();
-        emit Migrated(sender, address(mpl), mplAmount, receiver, address(stsyrup), stsyrupAmount);
+        emit Migrated(sender, address(mpl), mplIn, receiver, address(stsyrup), stsyrupOut);
 
         assertBalances({
             accounts: [address(actions), address(migrator), address(receiver), address(sender), address(stsyrup), address(xmpl)],
-            mpls:     [uint256(0),       uint256(0),        uint256(0),        mplAmount,       uint256(0),       uint256(0)],
+            mpls:     [uint256(0),       uint256(0),        uint256(0),        mplIn,           uint256(0),       uint256(0)],
             xmpls:    [uint256(0),       uint256(0),        uint256(0),        uint256(0),      uint256(0),       uint256(0)],
             syrups:   [uint256(0),       uint256(0),        uint256(0),        uint256(0),      uint256(0),       uint256(0)],
             stsyrups: [uint256(0),       uint256(0),        uint256(0),        uint256(0),      uint256(0),       uint256(0)]
         });
 
         vm.prank(sender);
-        actions.migrateAndStake(receiver, mplAmount);
+        actions.migrateAndStake(receiver, mplIn);
 
         assertBalances({
             accounts: [address(actions), address(migrator), address(receiver), address(sender), address(stsyrup), address(xmpl)],
-            mpls:     [uint256(0),       mplAmount,         uint256(0),        uint256(0),      uint256(0),       uint256(0)],
+            mpls:     [uint256(0),       mplIn,             uint256(0),        uint256(0),      uint256(0),       uint256(0)],
             xmpls:    [uint256(0),       uint256(0),        uint256(0),        uint256(0),      uint256(0),       uint256(0)],
-            syrups:   [uint256(0),       uint256(0),        uint256(0),        uint256(0),      syrupAmount,      uint256(0)],
-            stsyrups: [uint256(0),       uint256(0),        stsyrupAmount,     uint256(0),      uint256(0),       uint256(0)]
+            syrups:   [uint256(0),       uint256(0),        uint256(0),        uint256(0),      syrupOut,         uint256(0)],
+            stsyrups: [uint256(0),       uint256(0),        stsyrupOut,        uint256(0),      uint256(0),       uint256(0)]
         });
     }
 
     function test_migrateAndStake_sameReceiver() external {
-        mpl.mint(receiver, mplAmount);
+        mpl.mint(receiver, mplIn);
 
         vm.prank(receiver);
-        mpl.approve(address(actions), mplAmount);
+        mpl.approve(address(actions), mplIn);
 
         vm.expectEmit();
-        emit Migrated(receiver, address(mpl), mplAmount, receiver, address(stsyrup), stsyrupAmount);
+        emit Migrated(receiver, address(mpl), mplIn, receiver, address(stsyrup), stsyrupOut);
 
         assertBalances({
             accounts: [address(actions), address(migrator), address(receiver), address(sender), address(stsyrup), address(xmpl)],
-            mpls:     [uint256(0),       uint256(0),        mplAmount,         uint256(0),      uint256(0),       uint256(0)],
+            mpls:     [uint256(0),       uint256(0),        mplIn,             uint256(0),      uint256(0),       uint256(0)],
             xmpls:    [uint256(0),       uint256(0),        uint256(0),        uint256(0),      uint256(0),       uint256(0)],
             syrups:   [uint256(0),       uint256(0),        uint256(0),        uint256(0),      uint256(0),       uint256(0)],
             stsyrups: [uint256(0),       uint256(0),        uint256(0),        uint256(0),      uint256(0),       uint256(0)]
         });
 
         vm.prank(receiver);
-        actions.migrateAndStake(receiver, mplAmount);
+        actions.migrateAndStake(receiver, mplIn);
 
         assertBalances({
             accounts: [address(actions), address(migrator), address(receiver), address(sender), address(stsyrup), address(xmpl)],
-            mpls:     [uint256(0),       mplAmount,         uint256(0),        uint256(0),      uint256(0),       uint256(0)],
+            mpls:     [uint256(0),       mplIn,             uint256(0),        uint256(0),      uint256(0),       uint256(0)],
             xmpls:    [uint256(0),       uint256(0),        uint256(0),        uint256(0),      uint256(0),       uint256(0)],
-            syrups:   [uint256(0),       uint256(0),        uint256(0),        uint256(0),      syrupAmount,      uint256(0)],
-            stsyrups: [uint256(0),       uint256(0),        stsyrupAmount,     uint256(0),      uint256(0),       uint256(0)]
+            syrups:   [uint256(0),       uint256(0),        uint256(0),        uint256(0),      syrupOut,         uint256(0)],
+            stsyrups: [uint256(0),       uint256(0),        stsyrupOut,        uint256(0),      uint256(0),       uint256(0)]
         });
     }
 
@@ -186,83 +186,83 @@ contract MplUserActionsRedeemAndMigrateTests is MplUserActionsTestBase {
     }
 
     function test_redeemAndMigrate_insufficientApproval() external {
-        xmpl.mint(sender, xmplAmount);
+        xmpl.mint(sender, xmplIn);
 
         vm.prank(sender);
-        xmpl.approve(address(actions), xmplAmount - 1);
+        xmpl.approve(address(actions), xmplIn - 1);
 
         vm.prank(sender);
         vm.expectRevert("MUA:RAM:TRANSFER_FAIL");
-        actions.redeemAndMigrate(receiver, xmplAmount);
+        actions.redeemAndMigrate(receiver, xmplIn);
     }
 
     function test_redeemAndMigrate_insufficientBalance() external {
-        xmpl.mint(sender, xmplAmount - 1);
+        xmpl.mint(sender, xmplIn - 1);
 
         vm.prank(sender);
-        xmpl.approve(address(actions), xmplAmount);
+        xmpl.approve(address(actions), xmplIn);
 
         vm.prank(sender);
         vm.expectRevert("MUA:RAM:TRANSFER_FAIL");
-        actions.redeemAndMigrate(receiver, xmplAmount);
+        actions.redeemAndMigrate(receiver, xmplIn);
     }
 
     function test_redeemAndMigrate_differentReceiver() external {
-        mpl.mint(address(xmpl),    mplAmount);
-        xmpl.mint(address(sender), xmplAmount);
+        mpl.mint(address(xmpl),    mplIn);
+        xmpl.mint(address(sender), xmplIn);
 
         vm.prank(sender);
-        xmpl.approve(address(actions), xmplAmount);
+        xmpl.approve(address(actions), xmplIn);
 
         vm.expectEmit();
-        emit Migrated(sender, address(xmpl), xmplAmount, receiver, address(syrup), syrupAmount);
+        emit Migrated(sender, address(xmpl), xmplIn, receiver, address(syrup), syrupOut);
 
         assertBalances({
             accounts: [address(actions), address(migrator), address(receiver), address(sender), address(stsyrup), address(xmpl)],
-            mpls:     [uint256(0),       uint256(0),        uint256(0),        uint256(0),      uint256(0),       mplAmount],
-            xmpls:    [uint256(0),       uint256(0),        uint256(0),        xmplAmount,      uint256(0),       uint256(0)],
+            mpls:     [uint256(0),       uint256(0),        uint256(0),        uint256(0),      uint256(0),       mplIn],
+            xmpls:    [uint256(0),       uint256(0),        uint256(0),        xmplIn,          uint256(0),       uint256(0)],
             syrups:   [uint256(0),       uint256(0),        uint256(0),        uint256(0),      uint256(0),       uint256(0)],
             stsyrups: [uint256(0),       uint256(0),        uint256(0),        uint256(0),      uint256(0),       uint256(0)]
         });
 
         vm.prank(sender);
-        actions.redeemAndMigrate(receiver, xmplAmount);
+        actions.redeemAndMigrate(receiver, xmplIn);
 
         assertBalances({
             accounts: [address(actions), address(migrator), address(receiver), address(sender), address(stsyrup), address(xmpl)],
-            mpls:     [uint256(0),       mplAmount,         uint256(0),        uint256(0),      uint256(0),       uint256(0)],
+            mpls:     [uint256(0),       mplIn,             uint256(0),        uint256(0),      uint256(0),       uint256(0)],
             xmpls:    [uint256(0),       uint256(0),        uint256(0),        uint256(0),      uint256(0),       uint256(0)],
-            syrups:   [uint256(0),       uint256(0),        syrupAmount,       uint256(0),      uint256(0),       uint256(0)],
+            syrups:   [uint256(0),       uint256(0),        syrupOut,          uint256(0),      uint256(0),       uint256(0)],
             stsyrups: [uint256(0),       uint256(0),        uint256(0),        uint256(0),      uint256(0),       uint256(0)]
         });
     }
 
     function test_redeemAndMigrate_sameReceiver() external {
-        mpl.mint(address(xmpl),      mplAmount);
-        xmpl.mint(address(receiver), xmplAmount);
+        mpl.mint(address(xmpl),      mplIn);
+        xmpl.mint(address(receiver), xmplIn);
 
         vm.prank(receiver);
-        xmpl.approve(address(actions), xmplAmount);
+        xmpl.approve(address(actions), xmplIn);
 
         vm.expectEmit();
-        emit Migrated(receiver, address(xmpl), xmplAmount, receiver, address(syrup), syrupAmount);
+        emit Migrated(receiver, address(xmpl), xmplIn, receiver, address(syrup), syrupOut);
 
         assertBalances({
             accounts: [address(actions), address(migrator), address(receiver), address(sender), address(stsyrup), address(xmpl)],
-            mpls:     [uint256(0),       uint256(0),        uint256(0),        uint256(0),      uint256(0),       mplAmount],
-            xmpls:    [uint256(0),       uint256(0),        xmplAmount,        uint256(0),      uint256(0),       uint256(0)],
+            mpls:     [uint256(0),       uint256(0),        uint256(0),        uint256(0),      uint256(0),       mplIn],
+            xmpls:    [uint256(0),       uint256(0),        xmplIn,            uint256(0),      uint256(0),       uint256(0)],
             syrups:   [uint256(0),       uint256(0),        uint256(0),        uint256(0),      uint256(0),       uint256(0)],
             stsyrups: [uint256(0),       uint256(0),        uint256(0),        uint256(0),      uint256(0),       uint256(0)]
         });
 
         vm.prank(receiver);
-        actions.redeemAndMigrate(receiver, xmplAmount);
+        actions.redeemAndMigrate(receiver, xmplIn);
 
         assertBalances({
             accounts: [address(actions), address(migrator), address(receiver), address(sender), address(stsyrup), address(xmpl)],
-            mpls:     [uint256(0),       mplAmount,         uint256(0),        uint256(0),      uint256(0),       uint256(0)],
+            mpls:     [uint256(0),       mplIn,             uint256(0),        uint256(0),      uint256(0),       uint256(0)],
             xmpls:    [uint256(0),       uint256(0),        uint256(0),        uint256(0),      uint256(0),       uint256(0)],
-            syrups:   [uint256(0),       uint256(0),        syrupAmount,       uint256(0),      uint256(0),       uint256(0)],
+            syrups:   [uint256(0),       uint256(0),        syrupOut,          uint256(0),      uint256(0),       uint256(0)],
             stsyrups: [uint256(0),       uint256(0),        uint256(0),        uint256(0),      uint256(0),       uint256(0)]
         });
     }
@@ -282,84 +282,84 @@ contract MplUserActionsRedeemAndMigrateAndStakeTests is MplUserActionsTestBase {
     }
 
     function test_redeemAndMigrateAndStake_insufficientApproval() external {
-        xmpl.mint(sender, xmplAmount);
+        xmpl.mint(sender, xmplIn);
 
         vm.prank(sender);
-        xmpl.approve(address(actions), xmplAmount - 1);
+        xmpl.approve(address(actions), xmplIn - 1);
 
         vm.prank(sender);
         vm.expectRevert("MUA:RAMAS:TRANSFER_FAIL");
-        actions.redeemAndMigrateAndStake(receiver, xmplAmount);
+        actions.redeemAndMigrateAndStake(receiver, xmplIn);
     }
 
     function test_redeemAndMigrateAndStake_insufficientBalance() external {
-        xmpl.mint(sender, xmplAmount - 1);
+        xmpl.mint(sender, xmplIn - 1);
 
         vm.prank(sender);
-        xmpl.approve(address(actions), xmplAmount);
+        xmpl.approve(address(actions), xmplIn);
 
         vm.prank(sender);
         vm.expectRevert("MUA:RAMAS:TRANSFER_FAIL");
-        actions.redeemAndMigrateAndStake(receiver, xmplAmount);
+        actions.redeemAndMigrateAndStake(receiver, xmplIn);
     }
 
     function test_redeemAndMigrateAndStake_differentReceiver() external {
-        mpl.mint(address(xmpl),    mplAmount);
-        xmpl.mint(address(sender), xmplAmount);
+        mpl.mint(address(xmpl),    mplIn);
+        xmpl.mint(address(sender), xmplIn);
 
         vm.prank(sender);
-        xmpl.approve(address(actions), xmplAmount);
+        xmpl.approve(address(actions), xmplIn);
 
         vm.expectEmit();
-        emit Migrated(sender, address(xmpl), xmplAmount, receiver, address(stsyrup), stsyrupAmount);
+        emit Migrated(sender, address(xmpl), xmplIn, receiver, address(stsyrup), stsyrupOut);
 
         assertBalances({
             accounts: [address(actions), address(migrator), address(receiver), address(sender), address(stsyrup), address(xmpl)],
-            mpls:     [uint256(0),       uint256(0),        uint256(0),        uint256(0),      uint256(0),       mplAmount],
-            xmpls:    [uint256(0),       uint256(0),        uint256(0),        xmplAmount,      uint256(0),       uint256(0)],
+            mpls:     [uint256(0),       uint256(0),        uint256(0),        uint256(0),      uint256(0),       mplIn],
+            xmpls:    [uint256(0),       uint256(0),        uint256(0),        xmplIn,          uint256(0),       uint256(0)],
             syrups:   [uint256(0),       uint256(0),        uint256(0),        uint256(0),      uint256(0),       uint256(0)],
             stsyrups: [uint256(0),       uint256(0),        uint256(0),        uint256(0),      uint256(0),       uint256(0)]
         });
 
         vm.prank(sender);
-        actions.redeemAndMigrateAndStake(receiver, xmplAmount);
+        actions.redeemAndMigrateAndStake(receiver, xmplIn);
 
         assertBalances({
             accounts: [address(actions), address(migrator), address(receiver), address(sender), address(stsyrup), address(xmpl)],
-            mpls:     [uint256(0),       mplAmount,         uint256(0),        uint256(0),      uint256(0),       uint256(0)],
+            mpls:     [uint256(0),       mplIn,             uint256(0),        uint256(0),      uint256(0),       uint256(0)],
             xmpls:    [uint256(0),       uint256(0),        uint256(0),        uint256(0),      uint256(0),       uint256(0)],
-            syrups:   [uint256(0),       uint256(0),        uint256(0),        uint256(0),      syrupAmount,      uint256(0)],
-            stsyrups: [uint256(0),       uint256(0),        stsyrupAmount,     uint256(0),      uint256(0),       uint256(0)]
+            syrups:   [uint256(0),       uint256(0),        uint256(0),        uint256(0),      syrupOut,         uint256(0)],
+            stsyrups: [uint256(0),       uint256(0),        stsyrupOut,        uint256(0),      uint256(0),       uint256(0)]
         });
     }
 
     function test_redeemAndMigrateAndStake_sameReceiver() external {
-        mpl.mint(address(xmpl),      mplAmount);
-        xmpl.mint(address(receiver), xmplAmount);
+        mpl.mint(address(xmpl),      mplIn);
+        xmpl.mint(address(receiver), xmplIn);
 
         vm.prank(receiver);
-        xmpl.approve(address(actions), xmplAmount);
+        xmpl.approve(address(actions), xmplIn);
 
         vm.expectEmit();
-        emit Migrated(receiver, address(xmpl), xmplAmount, receiver, address(stsyrup), stsyrupAmount);
+        emit Migrated(receiver, address(xmpl), xmplIn, receiver, address(stsyrup), stsyrupOut);
 
         assertBalances({
             accounts: [address(actions), address(migrator), address(receiver), address(sender), address(stsyrup), address(xmpl)],
-            mpls:     [uint256(0),       uint256(0),        uint256(0),        uint256(0),      uint256(0),       mplAmount],
-            xmpls:    [uint256(0),       uint256(0),        xmplAmount,        uint256(0),      uint256(0),       uint256(0)],
+            mpls:     [uint256(0),       uint256(0),        uint256(0),        uint256(0),      uint256(0),       mplIn],
+            xmpls:    [uint256(0),       uint256(0),        xmplIn,            uint256(0),      uint256(0),       uint256(0)],
             syrups:   [uint256(0),       uint256(0),        uint256(0),        uint256(0),      uint256(0),       uint256(0)],
             stsyrups: [uint256(0),       uint256(0),        uint256(0),        uint256(0),      uint256(0),       uint256(0)]
         });
 
         vm.prank(receiver);
-        actions.redeemAndMigrateAndStake(receiver, xmplAmount);
+        actions.redeemAndMigrateAndStake(receiver, xmplIn);
 
         assertBalances({
             accounts: [address(actions), address(migrator), address(receiver), address(sender), address(stsyrup), address(xmpl)],
-            mpls:     [uint256(0),       mplAmount,         uint256(0),        uint256(0),      uint256(0),       uint256(0)],
+            mpls:     [uint256(0),       mplIn,             uint256(0),        uint256(0),      uint256(0),       uint256(0)],
             xmpls:    [uint256(0),       uint256(0),        uint256(0),        uint256(0),      uint256(0),       uint256(0)],
-            syrups:   [uint256(0),       uint256(0),        uint256(0),        uint256(0),      syrupAmount,      uint256(0)],
-            stsyrups: [uint256(0),       uint256(0),        stsyrupAmount,     uint256(0),      uint256(0),       uint256(0)]
+            syrups:   [uint256(0),       uint256(0),        uint256(0),        uint256(0),      syrupOut,         uint256(0)],
+            stsyrups: [uint256(0),       uint256(0),        stsyrupOut,        uint256(0),      uint256(0),       uint256(0)]
         });
     }
 

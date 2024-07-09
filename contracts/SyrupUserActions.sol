@@ -5,7 +5,7 @@ import { ERC20Helper } from "../modules/erc20-helper/src/ERC20Helper.sol";
 
 import { ISyrupUserActions } from "./interfaces/ISyrupUserActions.sol";
 
-import { IBalancerVaultLike, IPSMLike, ISDAILike } from "./interfaces/Interfaces.sol";
+import { IBalancerVaultLike, IPSMLike, ISdaiLike } from "./interfaces/Interfaces.sol";
 
 contract SyrupUserActions is ISyrupUserActions {
 
@@ -27,46 +27,46 @@ contract SyrupUserActions is ISyrupUserActions {
         require(ERC20Helper.approve(DAI, PSM, type(uint256).max),              "SUA:C:DAI_APPROVE_FAIL");
     }
 
-    function swapToDai(uint256 syrupUsdcAmountIn_, uint256 minDaiOut_) external override returns (uint256 daiOut_) {
+    function swapToDai(uint256 syrupUsdcIn_, uint256 minDaiOut_) external override returns (uint256 daiOut_) {
         // 1. Pull SyrupUSDC from the user
-        require(ERC20Helper.transferFrom(SYRUP_USDC, msg.sender, address(this), syrupUsdcAmountIn_), "SAU:STD:TRANSFER_FROM_FAILED");
+        require(ERC20Helper.transferFrom(SYRUP_USDC, msg.sender, address(this), syrupUsdcIn_), "SAU:STD:TRANSFER_FROM_FAILED");
 
         // 2. Swap into sDAI
-        uint256 sDAIAmount = _swapViaBalancer(syrupUsdcAmountIn_);
+        uint256 sdaiAmount = _swapViaBalancer(syrupUsdcIn_);
 
         // 3. Redeem sDAI for DAI
-        daiOut_ = _redeemForDAI(sDAIAmount);
+        daiOut_ = _redeemForDai(sdaiAmount);
 
         require(daiOut_ >= minDaiOut_,                          "SAU:STD:INSUFFICIENT_DAI");
         require(ERC20Helper.transfer(DAI, msg.sender, daiOut_), "SAU:STD:TRANSFER_FAILED");
     }
 
-    function swapToUsdc(uint256 syrupUsdcAmountIn_, uint256 minUsdcOut_) external override returns (uint256 usdcOut_) {
+    function swapToUsdc(uint256 syrupUsdcIn_, uint256 minUsdcOut_) external override returns (uint256 usdcOut_) {
         // 1. Pull SyrupUSDC from the user
-        require(ERC20Helper.transferFrom(SYRUP_USDC, msg.sender, address(this), syrupUsdcAmountIn_), "SUA:STU:TRANSFER_FROM_FAILED");
+        require(ERC20Helper.transferFrom(SYRUP_USDC, msg.sender, address(this), syrupUsdcIn_), "SUA:STU:TRANSFER_FROM_FAILED");
 
         // 2. Swap to sDAI
-        uint256 sDAIAmount = _swapViaBalancer(syrupUsdcAmountIn_);
+        uint256 sdaiAmount = _swapViaBalancer(syrupUsdcIn_);
 
         // 3. Redeem sDAI for DAI
-        uint256 daiOut = _redeemForDAI(sDAIAmount);
+        uint256 daiOut = _redeemForDai(sdaiAmount);
 
         // 4. Swap DAI for USDC using the PSM
         usdcOut_ = _swapDaiForUsdc(daiOut, msg.sender, minUsdcOut_);
     }
 
-    function _swapDaiForUsdc(uint256 daiAmount_, address receiver_, uint256 minUsdcOut_) internal returns (uint256 amountOut_) {
+    function _swapDaiForUsdc(uint256 daiIn_, address receiver_, uint256 minUsdcOut_) internal returns (uint256 usdcOut_) {
         IPSMLike psm = IPSMLike(PSM);
         // Calculate the exact amount of gems we expect to receive given this amount of assets
         // We are reversing the calculation at
         // https://github.com/makerdao/dss-psm/blob/222c96d4047e76680ed6803f07dd61aa2590e42b/src/psm.sol#L121
         // Note: Due to rounding, this may leave dai dust in the contract
-        amountOut_ = daiAmount_ * 1e18 / (PSM_PRECISION * (1e18 + psm.tout()));
-        require(amountOut_ >= minUsdcOut_, "SUA:SDU:INSUFFICIENT_AMOUNT_OUT");
-        psm.buyGem(receiver_, amountOut_);
+        usdcOut_ = daiIn_ * 1e18 / (PSM_PRECISION * (1e18 + psm.tout()));
+        require(usdcOut_ >= minUsdcOut_, "SUA:SDU:INSUFFICIENT_AMOUNT_OUT");
+        psm.buyGem(receiver_, usdcOut_);
     }
 
-    function _swapViaBalancer(uint256 amountIn_) internal returns (uint256 sDai_) {
+    function _swapViaBalancer(uint256 syrupUsdcIn_) internal returns (uint256 sdaiOut_) {
         IBalancerVaultLike.FundManagement memory funds = IBalancerVaultLike.FundManagement({
             sender:              address(this),
             fromInternalBalance: false,
@@ -79,11 +79,11 @@ contract SyrupUserActions is ISyrupUserActions {
             kind:     IBalancerVaultLike.SwapKind.GIVEN_IN,
             assetIn:  SYRUP_USDC,
             assetOut: SDAI,
-            amount:   amountIn_,
+            amount:   syrupUsdcIn_,
             userData: new bytes(0)
         });
 
-        sDai_ = IBalancerVaultLike(BAL_VAULT).swap({
+        sdaiOut_ = IBalancerVaultLike(BAL_VAULT).swap({
             singleSwap: swap,
             funds:      funds,
             limit:      0,
@@ -91,8 +91,8 @@ contract SyrupUserActions is ISyrupUserActions {
         });
     }
 
-    function _redeemForDAI(uint256 amount_) internal returns (uint256 dai_) {
-        dai_ = ISDAILike(SDAI).redeem(amount_, address(this), address(this));
+    function _redeemForDai(uint256 sdaiIn) internal returns (uint256 daiOut_) {
+        daiOut_ = ISdaiLike(SDAI).redeem(sdaiIn, address(this), address(this));
     }
 
 }

@@ -59,54 +59,54 @@ contract SyrupUserActionsSwapToUsdcTests is SyrupUserActionsTestBase {
 
     address account = makeAddr("account");
 
-    uint256 amount = 1e6;
+    uint256 syrupUsdcIn = 1e6;
 
     IERC20Like usdc      = IERC20Like(USDC);
     IERC20Like syrupUsdc = IERC20Like(SYRUP_USDC);
 
     function testFork_swapToUsdc_noApproval() external {
-        _mintSyrupUsdc(address(account), amount);
+        _mintSyrupUsdc(address(account), syrupUsdcIn);
 
         vm.expectRevert("SUA:STU:TRANSFER_FROM_FAILED");
-        syrupUserActions.swapToUsdc(amount, 0);
+        syrupUserActions.swapToUsdc(syrupUsdcIn, 0);
     }
 
     function testFork_swapToUsdc_insufficientBalance() external {
-        _mintSyrupUsdc(address(account), amount - 1);
+        _mintSyrupUsdc(address(account), syrupUsdcIn - 1);
 
-        syrupUsdc.approve(address(syrupUserActions), amount);
+        syrupUsdc.approve(address(syrupUserActions), syrupUsdcIn);
 
         vm.expectRevert("SUA:STU:TRANSFER_FROM_FAILED");
-        syrupUserActions.swapToUsdc(amount, 0);
+        syrupUserActions.swapToUsdc(syrupUsdcIn, 0);
     }
 
     function testFork_swapToUsdc_notEnoughOut() external {
-        _mintSyrupUsdc(address(account), amount);
+        _mintSyrupUsdc(address(account), syrupUsdcIn);
 
         vm.prank(account);
-        syrupUsdc.approve(address(syrupUserActions), amount);
+        syrupUsdc.approve(address(syrupUserActions), syrupUsdcIn);
 
         vm.expectRevert("SUA:SDU:INSUFFICIENT_AMOUNT_OUT");
         vm.prank(account);
-        syrupUserActions.swapToUsdc(amount, 100e6);
+        syrupUserActions.swapToUsdc(syrupUsdcIn, 100e6);
     }
 
     function testFork_swapToUsdc_success() public {
-        _mintSyrupUsdc(address(account), amount);
+        _mintSyrupUsdc(address(account), syrupUsdcIn);
 
-        uint256 poolOutput = IPoolLike(SYRUP_USDC).convertToExitAssets(amount);
+        uint256 poolOutput = IPoolLike(SYRUP_USDC).convertToExitAssets(syrupUsdcIn);
         uint256 minOutput  = poolOutput * 0.995e18 / 1e18;
 
         vm.prank(account);
-        syrupUsdc.approve(address(syrupUserActions), amount);
+        syrupUsdc.approve(address(syrupUserActions), syrupUsdcIn);
 
-        assertEq(syrupUsdc.balanceOf(address(account)),          amount);
+        assertEq(syrupUsdc.balanceOf(address(account)),          syrupUsdcIn);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
         assertEq(usdc.balanceOf(address(account)),               0);
         assertEq(usdc.balanceOf(address(syrupUserActions)),      0);
 
         vm.prank(account);
-        uint256 usdcOut = syrupUserActions.swapToUsdc(amount, minOutput);
+        uint256 usdcOut = syrupUserActions.swapToUsdc(syrupUsdcIn, minOutput);
 
         assertEq(syrupUsdc.balanceOf(address(account)),          0);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
@@ -114,25 +114,25 @@ contract SyrupUserActionsSwapToUsdcTests is SyrupUserActionsTestBase {
         assertEq(usdc.balanceOf(address(syrupUserActions)),      0);
     }
 
-    function testForkFuzz_swapToUsdc(uint256 amount_, uint256 slippage_) external {
+    function testForkFuzz_swapToUsdc(uint256 syrupUsdcIn_, uint256 slippage_) external {
         // Increase this value once the balancer pool has more liquidity
-        amount    = bound(amount_, 2, 400e6);
-        slippage_ = bound(slippage_, 20, 100);  // From 20 to 100 bps
+        syrupUsdcIn = bound(syrupUsdcIn_, 2, 400e6);
+        slippage_   = bound(slippage_, 20, 100);  // From 20 to 100 bps
 
-        uint256 minAmountOut = amount * (10000 - slippage_) / 10000;
+        uint256 minUsdcOut = syrupUsdcIn * (10000 - slippage_) / 10000;
 
-        _mintSyrupUsdc(address(account), amount);
+        _mintSyrupUsdc(address(account), syrupUsdcIn);
 
         vm.prank(account);
-        syrupUsdc.approve(address(syrupUserActions), amount);
+        syrupUsdc.approve(address(syrupUserActions), syrupUsdcIn);
 
-        assertEq(syrupUsdc.balanceOf(address(account)),          amount);
+        assertEq(syrupUsdc.balanceOf(address(account)),          syrupUsdcIn);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
         assertEq(usdc.balanceOf(address(account)),               0);
         assertEq(usdc.balanceOf(address(syrupUserActions)),      0);
 
         vm.prank(account);
-        uint256 usdcOut = syrupUserActions.swapToUsdc(amount, minAmountOut);
+        uint256 usdcOut = syrupUserActions.swapToUsdc(syrupUsdcIn, minUsdcOut);
 
         assertEq(syrupUsdc.balanceOf(address(account)),          0);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
@@ -146,56 +146,56 @@ contract SyrupUserActionsSwapToDaiTests is SyrupUserActionsTestBase {
 
     address account = makeAddr("account");
 
-    uint256 amount = 1e6;
+    uint256 syrupUsdcIn = 1e6;
 
     IERC20Like dai       = IERC20Like(DAI);
     IERC20Like syrupUsdc = IERC20Like(SYRUP_USDC);
 
     function testFork_swapToDai_noApproval() external {
-        _mintSyrupUsdc(address(account), amount);
+        _mintSyrupUsdc(address(account), syrupUsdcIn);
 
         vm.expectRevert("SAU:STD:TRANSFER_FROM_FAILED");
-        syrupUserActions.swapToDai(amount, 0);
+        syrupUserActions.swapToDai(syrupUsdcIn, 0);
     }
 
     function testFork_swapToDai_insufficientBalance() external {
-        _mintSyrupUsdc(address(account), amount - 1);
+        _mintSyrupUsdc(address(account), syrupUsdcIn - 1);
 
-        syrupUsdc.approve(address(syrupUserActions), amount);
+        syrupUsdc.approve(address(syrupUserActions), syrupUsdcIn);
 
         vm.expectRevert("SAU:STD:TRANSFER_FROM_FAILED");
-        syrupUserActions.swapToDai(amount, 0);
+        syrupUserActions.swapToDai(syrupUsdcIn, 0);
     }
 
     function testFork_swapToDai_notEnoughOut() external {
-        _mintSyrupUsdc(address(account), amount);
+        _mintSyrupUsdc(address(account), syrupUsdcIn);
 
         vm.prank(account);
-        syrupUsdc.approve(address(syrupUserActions), amount);
+        syrupUsdc.approve(address(syrupUserActions), syrupUsdcIn);
 
         vm.expectRevert("SAU:STD:INSUFFICIENT_DAI");
         vm.prank(account);
-        syrupUserActions.swapToDai(amount, 100e18);
+        syrupUserActions.swapToDai(syrupUsdcIn, 100e18);
     }
 
     function testFork_swapToDai_success() public {
-        _mintSyrupUsdc(address(account), amount);
+        _mintSyrupUsdc(address(account), syrupUsdcIn);
 
-        uint256 poolOutput = IPoolLike(SYRUP_USDC).convertToExitAssets(amount);
+        uint256 poolOutput = IPoolLike(SYRUP_USDC).convertToExitAssets(syrupUsdcIn);
         uint256 minOutput  = poolOutput * 0.995e18 / 1e18;
 
         uint256 initialSdaiBalance = IERC20Like(SDAI).balanceOf(address(BAL_VAULT));
 
         vm.prank(account);
-        syrupUsdc.approve(address(syrupUserActions), amount);
+        syrupUsdc.approve(address(syrupUserActions), syrupUsdcIn);
 
-        assertEq(syrupUsdc.balanceOf(address(account)),          amount);
+        assertEq(syrupUsdc.balanceOf(address(account)),          syrupUsdcIn);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
         assertEq(dai.balanceOf(address(account)),                0);
         assertEq(dai.balanceOf(address(syrupUserActions)),       0);
 
         vm.prank(account);
-        uint256 usdcOut = syrupUserActions.swapToDai(amount, minOutput);
+        uint256 usdcOut = syrupUserActions.swapToDai(syrupUsdcIn, minOutput);
 
         assertEq(syrupUsdc.balanceOf(address(account)),          0);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
@@ -205,27 +205,27 @@ contract SyrupUserActionsSwapToDaiTests is SyrupUserActionsTestBase {
         assertTrue(initialSdaiBalance > IERC20Like(SDAI).balanceOf(address(BAL_VAULT)));
     }
 
-    function testForkFuzz_swapToDai(uint256 amount_, uint256 slippage_) external {
+    function testForkFuzz_swapToDai(uint256 syrupUsdcIn_, uint256 slippage_) external {
         // Increase this value once the balancer pool has more liquidity
-        amount    = bound(amount_, 2, 400e6);
-        slippage_ = bound(slippage_, 10, 100);  // From 10 to 100 bps
+        syrupUsdcIn = bound(syrupUsdcIn_, 2, 400e6);
+        slippage_   = bound(slippage_, 10, 100);  // From 10 to 100 bps
 
-        uint256 minAmountOut = amount * (10000 - slippage_) / 10000;
+        uint256 minDaiOut = syrupUsdcIn * (10000 - slippage_) / 10000;
 
         uint256 initialSdaiBalance = IERC20Like(SDAI).balanceOf(address(BAL_VAULT));
 
-        _mintSyrupUsdc(address(account), amount);
+        _mintSyrupUsdc(address(account), syrupUsdcIn);
 
         vm.prank(account);
-        syrupUsdc.approve(address(syrupUserActions), amount);
+        syrupUsdc.approve(address(syrupUserActions), syrupUsdcIn);
 
-        assertEq(syrupUsdc.balanceOf(address(account)),          amount);
+        assertEq(syrupUsdc.balanceOf(address(account)),          syrupUsdcIn);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
         assertEq(dai.balanceOf(address(account)),                0);
         assertEq(dai.balanceOf(address(syrupUserActions)),       0);
 
         vm.prank(account);
-        uint256 usdcOut = syrupUserActions.swapToDai(amount, minAmountOut);
+        uint256 usdcOut = syrupUserActions.swapToDai(syrupUsdcIn, minDaiOut);
 
         assertEq(syrupUsdc.balanceOf(address(account)),          0);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);

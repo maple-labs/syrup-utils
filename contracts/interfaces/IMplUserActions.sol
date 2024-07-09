@@ -56,26 +56,26 @@ interface IMplUserActions {
 
     /**
      *  @dev    Migrates MPL to SYRUP and then stakes it.
-     *  @param  receiver      Address that will receive stSYRUP.
-     *  @param  mplAmount     Amount of MPL to migrate.
-     *  @return stsyrupAmount Amount of stSYRUP received.
+     *  @param  receiver   Address that will receive stSYRUP.
+     *  @param  mplIn      Amount of MPL to migrate.
+     *  @return stsyrupOut Amount of stSYRUP received.
      */
-    function migrateAndStake(address receiver, uint256 mplAmount) external returns (uint256 stsyrupAmount);
+    function migrateAndStake(address receiver, uint256 mplIn) external returns (uint256 stsyrupOut);
 
     /**
      *  @dev    Redeems xMPL into MPL and then migrates it to SYRUP.
-     *  @param  receiver    Address that will receive SYRUP.
-     *  @param  xmplAmount  Amount of xMPL to redeem.
-     *  @return syrupAmount Amount of SYRUP received.
+     *  @param  receiver Address that will receive SYRUP.
+     *  @param  xmplIn   Amount of xMPL to redeem.
+     *  @return syrupOut Amount of SYRUP received.
      */
-    function redeemAndMigrate(address receiver, uint256 xmplAmount) external returns (uint256 syrupAmount);
+    function redeemAndMigrate(address receiver, uint256 xmplIn) external returns (uint256 syrupOut);
 
     /**
      *  @dev    Redeems xMPL into MPL, migrates it to SYRUP, and then stakes it.
-     *  @param  receiver      Address that will receive stSYRUP.
-     *  @param  xmplAmount    Amount of xMPL to redeem.
-     *  @return stsyrupAmount Amount of stSYRUP received.
+     *  @param  receiver   Address that will receive stSYRUP.
+     *  @param  xmplIn     Amount of xMPL to redeem.
+     *  @return stsyrupOut Amount of stSYRUP received.
      */
-    function redeemAndMigrateAndStake(address receiver, uint256 xmplAmount) external returns (uint256 stsyrupAmount);
+    function redeemAndMigrateAndStake(address receiver, uint256 xmplIn) external returns (uint256 stsyrupOut);
 
 }

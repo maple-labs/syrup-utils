@@ -96,7 +96,7 @@ interface IPSMLike {
 
 }
 
-interface ISDAILike {
+interface ISdaiLike {
 
     function redeem(uint256 shares, address receiver, address owner) external returns (uint256 assets);
 
