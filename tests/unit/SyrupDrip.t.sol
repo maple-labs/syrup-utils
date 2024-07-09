@@ -471,7 +471,7 @@ contract SyrupDripClaimTests is SyrupDripClaimTestBase {
 }
 
 contract SyrupDripClaimAndStakeTests is SyrupDripClaimTestBase {
-    
+
     // Repeating the tests from Claim. Redundant but necessary for the sake of completeness.
      function test_claimAndStake_alreadyClaimed() external {
         drip.claimAndStake(id_habibi, address_habibi, amount_habibi, proof_habibi);
@@ -636,6 +636,12 @@ contract SyrupDripReclaimTests is SyrupDripTestBase {
     function test_reclaim_notAuthorized() external {
         vm.expectRevert("SD:NOT_AUTHORIZED");
         drip.reclaim(treasury, balance);
+    }
+
+    function test_reclaim_zeroAmount() external {
+        vm.prank(governor);
+        vm.expectRevert("SD:R:ZERO_AMOUNT");
+        drip.reclaim(treasury, 0);
     }
 
     function test_reclaim_transferFail() external {
