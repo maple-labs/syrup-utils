@@ -54,6 +54,12 @@ interface IGlobalsLike {
 
 }
 
+interface IMigratorLike {
+
+    function migrate(address receiver, uint256 mplAmount) external returns (uint256 syrupAmount);
+
+}
+
 interface IPoolLike is IERC20Like {
 
     function asset() external view returns (address asset);
@@ -87,9 +93,20 @@ interface IPSMLike {
     function buyGem(address account, uint256 daiAmount) external;
 
     function tout() external view returns (uint256 tout);  // This is the fee charged for conversion
+
 }
 
 interface ISDAILike {
+
+    function redeem(uint256 shares, address receiver, address owner) external returns (uint256 assets);
+
+}
+
+interface IRDTLike {
+
+    function asset() external view returns (address asset);
+
+    function deposit(uint256 assets, address receiver) external returns (uint256 shares);
 
     function redeem(uint256 shares, address receiver, address owner) external returns (uint256 assets);
 

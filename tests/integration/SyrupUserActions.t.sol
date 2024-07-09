@@ -201,7 +201,7 @@ contract SyrupUserActionsSwapToDaiTests is SyrupUserActionsTestBase {
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
         assertEq(dai.balanceOf(address(account)),                usdcOut);
         assertEq(dai.balanceOf(address(syrupUserActions)),       0);
-        
+
         assertTrue(initialSdaiBalance > IERC20Like(SDAI).balanceOf(address(BAL_VAULT)));
     }
 

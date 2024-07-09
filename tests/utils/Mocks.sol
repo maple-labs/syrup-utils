@@ -59,6 +59,28 @@ contract MockGlobals {
 
 }
 
+contract MockMigrator {
+
+    MockERC20 _mpl;
+    MockERC20 _syrup;
+
+    uint256 _scalar;
+
+    constructor(MockERC20 mpl, MockERC20 syrup, uint256 scalar) {
+        _mpl    = mpl;
+        _syrup  = syrup;
+        _scalar = scalar;
+    }
+
+    function migrate(address owner_, uint256 mplAmount_) external returns (uint256 syrupAmount_) {
+        syrupAmount_ = mplAmount_ * _scalar;
+
+        _mpl.transferFrom(msg.sender, address(this), mplAmount_);
+        _syrup.mint(owner_, syrupAmount_);
+    }
+
+}
+
 contract MockPool is MockERC20 {
 
     address _asset;
@@ -143,6 +165,31 @@ contract MockPoolPermissionManager {
 
     function setLenderBitmaps(address[] calldata, uint256[] calldata ) external {
         // do nothing
+    }
+
+}
+
+// TODO: Add a scalar when converting assets to shares and vice versa (for fuzz testing with different exchange rates).
+contract MockRDT is BaseMockERC20 {
+
+    address public asset;
+
+    constructor(string memory name_, string memory symbol_, uint8 decimals_, MockERC20 asset_) BaseMockERC20(name_, symbol_, decimals_) {
+        asset = address(asset_);
+    }
+
+    function deposit(uint256 assets_, address receiver_) external returns (uint256 shares_) {
+        shares_ = assets_;
+
+        MockERC20(asset).transferFrom(msg.sender, address(this), assets_);
+        _mint(receiver_, shares_);
+    }
+
+    function redeem(uint256 shares_, address receiver_, address owner_) external returns (uint256 assets_) {
+        assets_ = shares_;
+
+        _burn(owner_, shares_);
+        MockERC20(asset).transfer(receiver_, assets_);
     }
 
 }
