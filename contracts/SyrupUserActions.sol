@@ -39,6 +39,8 @@ contract SyrupUserActions is ISyrupUserActions {
 
         require(daiOut_ >= minDaiOut_,                          "SAU:STD:INSUFFICIENT_DAI");
         require(ERC20Helper.transfer(DAI, msg.sender, daiOut_), "SAU:STD:TRANSFER_FAILED");
+
+        emit Swap(msg.sender, SYRUP_USDC, syrupUsdcIn_, DAI, daiOut_);
     }
 
     function swapToDaiWithPermit(
@@ -65,6 +67,8 @@ contract SyrupUserActions is ISyrupUserActions {
 
         require(daiOut_ >= minDaiOut_,                          "SAU:STDWP:INSUFFICIENT_DAI_OUT");
         require(ERC20Helper.transfer(DAI, msg.sender, daiOut_), "SAU:STDWP:TRANSFER_FAILED");
+
+        emit Swap(msg.sender, SYRUP_USDC, syrupUsdcIn_, DAI, daiOut_);
     }
 
     function swapToUsdc(uint256 syrupUsdcIn_, uint256 minUsdcOut_) external override returns (uint256 usdcOut_) {
@@ -79,6 +83,8 @@ contract SyrupUserActions is ISyrupUserActions {
 
         // 4. Swap DAI for USDC using the PSM
         usdcOut_ = _swapDaiForUsdc(daiOut, msg.sender, minUsdcOut_);
+
+        emit Swap(msg.sender, SYRUP_USDC, syrupUsdcIn_, USDC, usdcOut_);
     }
 
      function swapToUsdcWithPermit(
@@ -105,6 +111,8 @@ contract SyrupUserActions is ISyrupUserActions {
 
         // 5. Swap DAI for USDC using the PSM
         usdcOut_ = _swapDaiForUsdc(daiOut, msg.sender, minUsdcOut_);
+
+        emit Swap(msg.sender, SYRUP_USDC, syrupUsdcIn_, USDC, usdcOut_);
     }
 
     function _permit(address asset_, uint256 deadline_, uint256 amount_, uint8 v_, bytes32 r_, bytes32 s_) internal {

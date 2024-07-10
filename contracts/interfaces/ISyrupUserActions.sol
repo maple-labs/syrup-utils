@@ -2,6 +2,20 @@
 pragma solidity ^0.8.0;
 
 interface ISyrupUserActions {
+    
+    /**************************************************************************************************************************************/
+    /*** Events                                                                                                                         ***/
+    /**************************************************************************************************************************************/
+
+    /**
+     *  @dev   Emitted when a swap occurs.
+     *  @param  owner     The address of the user that initiated the swap.
+     *  @param  tokenIn   The address of the token being swapped.
+     *  @param  amountIn  The amount of the token being swapped.
+     *  @param  tokenOut  The address of the token received.
+     *  @param  amountOut The amount of the token received.
+     */
+    event Swap(address indexed owner, address tokenIn, uint256 amountIn, address tokenOut, uint256 amountOut);
 
     /**************************************************************************************************************************************/
     /*** State-Changing Functions                                                                                                       ***/
