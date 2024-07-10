@@ -27,64 +27,31 @@ contract SyrupUserActions is ISyrupUserActions {
         require(ERC20Helper.approve(DAI, PSM, type(uint256).max),              "SUA:C:DAI_APPROVE_FAIL");
     }
 
+    /**************************************************************************************************************************************/
+    /*** User Actions                                                                                                                   ***/
+    /**************************************************************************************************************************************/
+
     function swapToDai(uint256 syrupUsdcIn_, uint256 minDaiOut_) external override returns (uint256 daiOut_) {
-        // 1. Pull SyrupUSDC from the user
-        require(ERC20Helper.transferFrom(SYRUP_USDC, msg.sender, address(this), syrupUsdcIn_), "SAU:STD:TRANSFER_FROM_FAILED");
-
-        // 2. Swap into sDAI
-        uint256 sdaiAmount = _swapViaBalancer(syrupUsdcIn_);
-
-        // 3. Redeem sDAI for DAI
-        daiOut_ = _redeemForDai(sdaiAmount);
-
-        require(daiOut_ >= minDaiOut_,                          "SAU:STD:INSUFFICIENT_DAI");
-        require(ERC20Helper.transfer(DAI, msg.sender, daiOut_), "SAU:STD:TRANSFER_FAILED");
-
-        emit Swap(msg.sender, SYRUP_USDC, syrupUsdcIn_, DAI, daiOut_);
+        daiOut_ = _swap(syrupUsdcIn_, minDaiOut_, DAI);
     }
 
     function swapToDaiWithPermit(
-        uint256 syrupUsdcIn_, 
-        uint256 minDaiOut_, 
-        uint256 deadline_, 
-        uint8   v_, 
-        bytes32 r_, 
+        uint256 syrupUsdcIn_,
+        uint256 minDaiOut_,
+        uint256 deadline_,
+        uint8   v_,
+        bytes32 r_,
         bytes32 s_
-    ) 
-        external override returns (uint256 daiOut_) 
+    )
+        external override returns (uint256 daiOut_)
     {
-        // 1. Permit the use of SyrupUSDC from the user
         _permit(SYRUP_USDC, deadline_, syrupUsdcIn_, v_, r_, s_);
 
-        // 2. Pull SyrupUSDC from the user
-        require(ERC20Helper.transferFrom(SYRUP_USDC, msg.sender, address(this), syrupUsdcIn_), "SUA:STDWP:TRANSFER_FROM_FAILED");
-
-        // 3. Swap to sDAI
-        uint256 sdaiAmount = _swapViaBalancer(syrupUsdcIn_);
-
-        // 4. Redeem sDAI for DAI  
-        daiOut_ = _redeemForDai(sdaiAmount);
-
-        require(daiOut_ >= minDaiOut_,                          "SAU:STDWP:INSUFFICIENT_DAI_OUT");
-        require(ERC20Helper.transfer(DAI, msg.sender, daiOut_), "SAU:STDWP:TRANSFER_FAILED");
-
-        emit Swap(msg.sender, SYRUP_USDC, syrupUsdcIn_, DAI, daiOut_);
+        daiOut_ = _swap(syrupUsdcIn_, minDaiOut_, DAI);
     }
 
     function swapToUsdc(uint256 syrupUsdcIn_, uint256 minUsdcOut_) external override returns (uint256 usdcOut_) {
-        // 1. Pull SyrupUSDC from the user
-        require(ERC20Helper.transferFrom(SYRUP_USDC, msg.sender, address(this), syrupUsdcIn_), "SUA:STU:TRANSFER_FROM_FAILED");
-
-        // 2. Swap to sDAI
-        uint256 sdaiAmount = _swapViaBalancer(syrupUsdcIn_);
-
-        // 3. Redeem sDAI for DAI
-        uint256 daiOut = _redeemForDai(sdaiAmount);
-
-        // 4. Swap DAI for USDC using the PSM
-        usdcOut_ = _swapDaiForUsdc(daiOut, msg.sender, minUsdcOut_);
-
-        emit Swap(msg.sender, SYRUP_USDC, syrupUsdcIn_, USDC, usdcOut_);
+       usdcOut_ = _swap(syrupUsdcIn_, minUsdcOut_, USDC);
     }
 
      function swapToUsdcWithPermit(
@@ -97,23 +64,41 @@ contract SyrupUserActions is ISyrupUserActions {
     )
         external override returns (uint256 usdcOut_)
     {
-        // 1. Permit the use of SyrupUSDC from the user
         _permit(SYRUP_USDC, deadline_, syrupUsdcIn_, v_, r_, s_);
 
-        // 2. Pull SyrupUSDC from the user
-        require(ERC20Helper.transferFrom(SYRUP_USDC, msg.sender, address(this), syrupUsdcIn_), "SUA:STUWP:TRANSFER_FROM_FAILED");
+        usdcOut_ = _swap(syrupUsdcIn_, minUsdcOut_, USDC);
+    }
 
-        // 3. Swap to sDAI
+    /**************************************************************************************************************************************/
+    /*** Internal Swap Function                                                                                                         ***/
+    /**************************************************************************************************************************************/
+
+    function _swap(uint256 syrupUsdcIn_, uint256 minAmountOut_, address assetOut_) internal returns (uint256 amountOut_) {
+        // 1. Pull SyrupUSDC from the user
+        require(ERC20Helper.transferFrom(SYRUP_USDC, msg.sender, address(this), syrupUsdcIn_), "SUA:S:TRANSFER_FROM_FAILED");
+
+        // 2. Swap into sDAI
         uint256 sdaiAmount = _swapViaBalancer(syrupUsdcIn_);
 
-        // 4. Redeem sDAI to DAI
-        uint256 daiOut = _redeemForDai(sdaiAmount);
+        // 3. Redeem sDAI for DAI
+        uint256 daiOut_ = _redeemForDai(sdaiAmount);
 
-        // 5. Swap DAI for USDC using the PSM
-        usdcOut_ = _swapDaiForUsdc(daiOut, msg.sender, minUsdcOut_);
+        // 4. If asset out is USDC, swap DAI for USDC, otherwise just transfer DAI
+        if (assetOut_ == USDC) {
+            amountOut_ = _swapDaiForUsdc(daiOut_, msg.sender, minAmountOut_);
+        } else {
+            amountOut_ = daiOut_;
+            require(ERC20Helper.transfer(DAI, msg.sender, daiOut_), "SUA:S:TRANSFER_FAILED");
+        }
 
-        emit Swap(msg.sender, SYRUP_USDC, syrupUsdcIn_, USDC, usdcOut_);
+        require(amountOut_ >= minAmountOut_, "SUA:S:INSUFFICIENT_AMOUNT_OUT");
+
+        emit Swap(msg.sender, SYRUP_USDC, syrupUsdcIn_, assetOut_, amountOut_);
     }
+
+    /**************************************************************************************************************************************/
+    /*** Internal Functions                                                                                                             ***/
+    /**************************************************************************************************************************************/
 
     function _permit(address asset_, uint256 deadline_, uint256 amount_, uint8 v_, bytes32 r_, bytes32 s_) internal {
         uint256 allowance_ = IERC20Like(asset_).allowance(msg.sender, address(this));

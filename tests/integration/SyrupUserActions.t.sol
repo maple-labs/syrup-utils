@@ -91,7 +91,7 @@ contract SyrupUserActionsConstructorTests is SyrupUserActionsTestBase {
 contract SyrupUserActionsSwapToUsdcTests is SyrupUserActionsTestBase {
 
     function testFork_swapToUsdc_noApproval() external {
-        vm.expectRevert("SUA:STU:TRANSFER_FROM_FAILED");
+        vm.expectRevert("SUA:S:TRANSFER_FROM_FAILED");
         syrupUserActions.swapToUsdc(syrupUsdcIn, 0);
     }
 
@@ -158,7 +158,7 @@ contract SyrupUserActionsSwapToUsdcTests is SyrupUserActionsTestBase {
 
         syrupUsdc.approve(address(syrupUserActions), syrupUsdcIn);
 
-        vm.expectRevert("SUA:STU:TRANSFER_FROM_FAILED");
+        vm.expectRevert("SUA:S:TRANSFER_FROM_FAILED");
         syrupUserActions.swapToUsdc(syrupUsdcIn, 0);
     }
 
@@ -179,7 +179,7 @@ contract SyrupUserActionsSwapToUsdcTests is SyrupUserActionsTestBase {
             })
         );
 
-        vm.expectRevert("SUA:STUWP:TRANSFER_FROM_FAILED");
+        vm.expectRevert("SUA:S:TRANSFER_FROM_FAILED");
         vm.prank(account);
         syrupUserActions.swapToUsdcWithPermit(syrupUsdcIn, 0, deadline, v, r, s);
     }
@@ -351,7 +351,7 @@ contract SyrupUserActionsSwapToUsdcTests is SyrupUserActionsTestBase {
 contract SyrupUserActionsSwapToDaiTests is SyrupUserActionsTestBase {
 
     function testFork_swapToDai_noApproval() external {
-        vm.expectRevert("SAU:STD:TRANSFER_FROM_FAILED");
+        vm.expectRevert("SUA:S:TRANSFER_FROM_FAILED");
         syrupUserActions.swapToDai(syrupUsdcIn, 0);
     }
 
@@ -417,7 +417,7 @@ contract SyrupUserActionsSwapToDaiTests is SyrupUserActionsTestBase {
 
         syrupUsdc.approve(address(syrupUserActions), syrupUsdcIn);
 
-        vm.expectRevert("SAU:STD:TRANSFER_FROM_FAILED");
+        vm.expectRevert("SUA:S:TRANSFER_FROM_FAILED");
         syrupUserActions.swapToDai(syrupUsdcIn, 0);
     }
 
@@ -437,7 +437,7 @@ contract SyrupUserActionsSwapToDaiTests is SyrupUserActionsTestBase {
             })
         );
 
-        vm.expectRevert("SUA:STDWP:TRANSFER_FROM_FAILED");
+        vm.expectRevert("SUA:S:TRANSFER_FROM_FAILED");
         vm.prank(account);
         syrupUserActions.swapToDaiWithPermit(syrupUsdcIn, 0, deadline, v, r, s);
     }
@@ -446,7 +446,7 @@ contract SyrupUserActionsSwapToDaiTests is SyrupUserActionsTestBase {
         vm.prank(account);
         syrupUsdc.approve(address(syrupUserActions), syrupUsdcIn);
 
-        vm.expectRevert("SAU:STD:INSUFFICIENT_DAI");
+        vm.expectRevert("SUA:S:INSUFFICIENT_AMOUNT_OUT");
         vm.prank(account);
         syrupUserActions.swapToDai(syrupUsdcIn, 100e18);
     }
@@ -465,7 +465,7 @@ contract SyrupUserActionsSwapToDaiTests is SyrupUserActionsTestBase {
             })
         );
 
-        vm.expectRevert("SAU:STDWP:INSUFFICIENT_DAI_OUT");
+        vm.expectRevert("SUA:S:INSUFFICIENT_AMOUNT_OUT");
         vm.prank(account);
         syrupUserActions.swapToDaiWithPermit(syrupUsdcIn, 100e18, deadline, v, r, s);
     }
