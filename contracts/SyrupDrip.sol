@@ -68,16 +68,27 @@ contract SyrupDrip is ISyrupDrip {
         emit Allocated(root_, deadline_, maxId_);
     }
 
-    function claim(uint256 id_, address owner_, uint256 amount_, bytes32[] calldata proof_) external override {
-        _claim(id_, owner_, owner_, amount_, proof_);
+    function claim(uint256 id_, address owner_, uint256 claimAmount_, bytes32[] calldata proof_) external override {
+        _claim(id_, owner_, claimAmount_, claimAmount_, proof_);
     }
 
-    function claimAndStake(uint256 id_, address owner_, uint256 amount_, bytes32[] calldata proof_) external override {
-        _claim(id_, owner_, address(this), amount_, proof_);
+    function claimAndStake(
+        uint256   id_,
+        address   owner_,
+        uint256   claimAmount_,
+        uint256   stakeAmount_,
+        bytes32[] calldata proof_
+    )
+        external override
+    {
+        require(stakeAmount_ > 0,             "SD:CAS:ZERO_STAKE_AMOUNT");
+        require(stakeAmount_ <= claimAmount_, "SD:CAS:INVALID_STAKE_AMOUNT");
 
-        uint256 shares_ = IStakedSyrupLike(stakedSyrup).deposit(amount_, owner_);
+        _claim(id_, owner_, claimAmount_, claimAmount_ - stakeAmount_, proof_);
 
-        emit Staked(id_, owner_, amount_, shares_);
+        uint256 shares_ = IStakedSyrupLike(stakedSyrup).deposit(stakeAmount_, owner_);
+
+        emit Staked(id_, owner_, stakeAmount_, shares_);
     }
 
     function reclaim(address to_, uint256 amount_) external override onlyProtocolAdmins {
@@ -91,19 +102,29 @@ contract SyrupDrip is ISyrupDrip {
     /*** Internal Functions                                                                                                             ***/
     /**************************************************************************************************************************************/
 
-    function _claim(uint256 id_, address owner_, address recipient_, uint256 amount_, bytes32[] calldata proof_) internal {
+    function _claim(
+        uint256   id_,
+        address   owner_,
+        uint256   claimAmount_,
+        uint256   transferAmount_,
+        bytes32[] calldata proof_
+    )
+        internal
+    {
         require(!_isClaimed(id_),            "SD:C:ALREADY_CLAIMED");
         require(block.timestamp <= deadline, "SD:C:EXPIRED_DEADLINE");
 
-        bytes32 leaf_ = keccak256(bytes.concat(keccak256(abi.encode(id_, owner_, amount_))));
+        bytes32 leaf_ = keccak256(bytes.concat(keccak256(abi.encode(id_, owner_, claimAmount_))));
 
         require(MerkleProof.verify(proof_, root, leaf_), "SD:C:INVALID_PROOF");
 
         _setClaimed(id_);
 
-        require(ERC20Helper.transfer(asset, recipient_, amount_), "SD:C:TRANSFER_FAIL");
+        if (transferAmount_ > 0) {
+            require(ERC20Helper.transfer(asset, owner_, transferAmount_), "SD:C:TRANSFER_FAIL");
+        }
 
-        emit Claimed(id_, owner_, amount_);
+        emit Claimed(id_, owner_, claimAmount_);
     }
 
     // TODO: Consider where comments for internal functions should go

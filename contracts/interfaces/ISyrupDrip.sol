@@ -58,24 +58,25 @@ interface ISyrupDrip {
      *         Can only claim a token allocation once.
      *         Can only be claimed before the deadline expires.
      *         Can only be claimed if the Merkle proof is valid.
-     *  @param id      Unique identifier of the token allocation.
-     *  @param account Address of the token recipient.
-     *  @param amount  Amount of claimed tokens.
-     *  @param proof   Proof that the recipient is part of the Merkle tree of token allocations.
+     *  @param id           Unique identifier of the token allocation.
+     *  @param account      Address of the token recipient.
+     *  @param claimAmount  Amount of tokens to claim.
+     *  @param proof        Proof that the recipient is part of the Merkle tree of token allocations.
      */
-    function claim(uint256 id, address account, uint256 amount, bytes32[] calldata proof) external;
+    function claim(uint256 id, address account, uint256 claimAmount, bytes32[] calldata proof) external;
 
     /**
-     *  @dev   Claims a token allocation and stakes the claimed tokens. 
+     *  @dev   Claims a token allocation and stakes the claimed tokens.
      *         Can only claim a token allocation once.
      *         Can only be claimed before the deadline expires.
      *         Can only be claimed if the Merkle proof is valid.
-     *  @param id      Unique identifier of the token allocation.
-     *  @param account Address of the token recipient.
-     *  @param amount  Amount of claimed tokens.
-     *  @param proof   Proof that the recipient is part of the Merkle tree of token allocations.
+     *  @param id          Unique identifier of the token allocation.
+     *  @param account     Address of the token recipient.
+     *  @param claimAmount Amount of tokens to claim.
+     *  @param stakeAmount Amount of tokens to stake.
+     *  @param proof       Proof that the recipient is part of the Merkle tree of token allocations.
      */
-    function claimAndStake(uint256 id, address account, uint256 amount, bytes32[] calldata proof) external;
+    function claimAndStake(uint256 id, address account, uint256 claimAmount, uint256 stakeAmount, bytes32[] calldata proof) external;
 
     /**
      *  @dev   Reclaims tokens from the contract.
