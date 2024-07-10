@@ -41,6 +41,32 @@ contract SyrupUserActions is ISyrupUserActions {
         require(ERC20Helper.transfer(DAI, msg.sender, daiOut_), "SAU:STD:TRANSFER_FAILED");
     }
 
+    function swapToDaiWithPermit(
+        uint256 syrupUsdcIn_, 
+        uint256 minDaiOut_, 
+        uint256 deadline_, 
+        uint8   v_, 
+        bytes32 r_, 
+        bytes32 s_
+    ) 
+        external override returns (uint256 daiOut_) 
+    {
+        // 1. Permit the use of SyrupUSDC from the user
+        _permit(SYRUP_USDC, deadline_, syrupUsdcIn_, v_, r_, s_);
+
+        // 2. Pull SyrupUSDC from the user
+        require(ERC20Helper.transferFrom(SYRUP_USDC, msg.sender, address(this), syrupUsdcIn_), "SUA:STDWP:TRANSFER_FROM_FAILED");
+
+        // 3. Swap to sDAI
+        uint256 sdaiAmount = _swapViaBalancer(syrupUsdcIn_);
+
+        // 4. Redeem sDAI for DAI  
+        daiOut_ = _redeemForDai(sdaiAmount);
+
+        require(daiOut_ >= minDaiOut_,                          "SAU:STDWP:INSUFFICIENT_DAI_OUT");
+        require(ERC20Helper.transfer(DAI, msg.sender, daiOut_), "SAU:STDWP:TRANSFER_FAILED");
+    }
+
     function swapToUsdc(uint256 syrupUsdcIn_, uint256 minUsdcOut_) external override returns (uint256 usdcOut_) {
         // 1. Pull SyrupUSDC from the user
         require(ERC20Helper.transferFrom(SYRUP_USDC, msg.sender, address(this), syrupUsdcIn_), "SUA:STU:TRANSFER_FROM_FAILED");

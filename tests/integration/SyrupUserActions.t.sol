@@ -18,12 +18,29 @@ contract SyrupUserActionsTestBase is Test {
 
     bytes32 constant POOL_ID = 0x48a5bfb5bd44345db0b31fa4b5a204890695c9b4000000000000000000000697;
 
+    address account = makeAddr("account");
+
+    uint256 syrupUsdcIn = 1e6;
+
+    IERC20Like dai       = IERC20Like(DAI);
+    IERC20Like usdc      = IERC20Like(USDC);
+    IERC20Like syrupUsdc = IERC20Like(SYRUP_USDC);
+
+    Vm.Wallet accountWallet = vm.createWallet("account");
+
     SyrupUserActions syrupUserActions;
 
     function setUp() public virtual {
         vm.createSelectFork(vm.envString("ETH_RPC_URL"), 20184000);
 
         syrupUserActions = new SyrupUserActions(POOL_ID);
+
+        _mintSyrupUsdc(address(account), syrupUsdcIn);
+    }
+
+    function _burnSyrupUsdc(address from_, uint256 amount_) internal {
+        vm.prank(from_);
+        IERC20Like(SYRUP_USDC).transfer(address(0), amount_);
     }
 
     function _getPermitDigest(address asset_, address owner_, address spender_, uint256 value_, uint256 nonce_, uint256 deadline_)
@@ -70,21 +87,6 @@ contract SyrupUserActionsConstructorTests is SyrupUserActionsTestBase {
 }
 
 contract SyrupUserActionsSwapToUsdcTests is SyrupUserActionsTestBase {
-
-    address account = makeAddr("account");
-
-    uint256 syrupUsdcIn = 1e6;
-
-    IERC20Like usdc      = IERC20Like(USDC);
-    IERC20Like syrupUsdc = IERC20Like(SYRUP_USDC);
-
-    Vm.Wallet accountWallet = vm.createWallet("account");
-
-    function setUp() public override {
-        super.setUp();
-
-        _mintSyrupUsdc(address(account), syrupUsdcIn);
-    }
 
     function testFork_swapToUsdc_noApproval() external {
         vm.expectRevert("SUA:STU:TRANSFER_FROM_FAILED");
@@ -150,8 +152,7 @@ contract SyrupUserActionsSwapToUsdcTests is SyrupUserActionsTestBase {
 
     function testFork_swapToUsdc_insufficientBalance() external {
         // Burn syrupUSDC
-        vm.prank(account);
-        syrupUsdc.transfer(address(0), 1);
+        _burnSyrupUsdc(account, 1);
 
         syrupUsdc.approve(address(syrupUserActions), syrupUsdcIn);
 
@@ -164,8 +165,7 @@ contract SyrupUserActionsSwapToUsdcTests is SyrupUserActionsTestBase {
         address depositor = accountWallet.addr;
 
         // Burn syrupUSDC
-        vm.prank(account);
-        syrupUsdc.transfer(address(0), 1);
+        _burnSyrupUsdc(account, 1);
 
         ( uint8 v, bytes32 r, bytes32 s ) = vm.sign(accountWallet, _getPermitDigest({
             asset_:    address(syrupUsdc),
@@ -269,8 +269,7 @@ contract SyrupUserActionsSwapToUsdcTests is SyrupUserActionsTestBase {
 
     function testForkFuzz_swapToUsdc(uint256 syrupUsdcIn_, uint256 slippage_) external {
         // Burn existing amount of syrupUsdc in the account
-        vm.prank(account);
-        syrupUsdc.transfer(address(0), syrupUsdcIn);
+        _burnSyrupUsdc(account, syrupUsdcIn);
 
         // Increase this value once the balancer pool has more liquidity
         syrupUsdcIn = bound(syrupUsdcIn_, 2, 400e6);
@@ -301,8 +300,7 @@ contract SyrupUserActionsSwapToUsdcTests is SyrupUserActionsTestBase {
 
     function testForkFuzz_swapToUsdcWithPermit_success(uint256 amountIn_, uint256 slippage_) external {
         // Burn existing amount of syrupUsdc in the account
-        vm.prank(account);
-        syrupUsdc.transfer(address(0), syrupUsdcIn);
+        _burnSyrupUsdc(account, syrupUsdcIn);
 
         address depositor  = accountWallet.addr;
         uint256 deadline   = block.timestamp;
@@ -344,18 +342,66 @@ contract SyrupUserActionsSwapToUsdcTests is SyrupUserActionsTestBase {
 
 contract SyrupUserActionsSwapToDaiTests is SyrupUserActionsTestBase {
 
-    address account = makeAddr("account");
-
-    uint256 syrupUsdcIn = 1e6;
-
-    IERC20Like dai       = IERC20Like(DAI);
-    IERC20Like syrupUsdc = IERC20Like(SYRUP_USDC);
-
     function testFork_swapToDai_noApproval() external {
-        _mintSyrupUsdc(address(account), syrupUsdcIn);
-
         vm.expectRevert("SAU:STD:TRANSFER_FROM_FAILED");
         syrupUserActions.swapToDai(syrupUsdcIn, 0);
+    }
+
+    function testFork_swapToDaiWithPermit_expired() external {
+        uint256 deadline  = block.timestamp - 1 seconds;
+        address depositor = accountWallet.addr;
+
+        ( uint8 v, bytes32 r, bytes32 s ) = vm.sign(accountWallet, _getPermitDigest({
+            asset_:    address(syrupUsdc),
+            owner_:    depositor,
+            spender_:  address(syrupUserActions),
+            value_:    syrupUsdcIn,
+            nonce_:    0,
+            deadline_: deadline
+            })
+        );
+
+        vm.expectRevert("ERC20:P:EXPIRED");
+        vm.prank(account);
+        syrupUserActions.swapToDaiWithPermit(syrupUsdcIn, 0, deadline, v, r, s);
+    }
+
+    function testFork_swapToDaiWithPermit_invalidSignatureDueToInvalidNonces() external {
+        uint256 deadline  = block.timestamp;
+        address depositor = accountWallet.addr;
+
+        ( uint8 v, bytes32 r, bytes32 s ) = vm.sign(accountWallet, _getPermitDigest({
+            asset_:    address(syrupUsdc),
+            owner_:    depositor,
+            spender_:  address(syrupUserActions),
+            value_:    syrupUsdcIn,
+            nonce_:    1,
+            deadline_: deadline
+            })
+        );
+
+        vm.expectRevert("ERC20:P:INVALID_SIGNATURE");
+        vm.prank(account);
+        syrupUserActions.swapToDaiWithPermit(syrupUsdcIn, 0, deadline, v, r, s);
+    }
+
+    function testFork_swapToDaiWithPermit_insufficientPermitAmount() external {
+        uint256 deadline  = block.timestamp;
+        address depositor = accountWallet.addr;
+
+        ( uint8 v, bytes32 r, bytes32 s ) = vm.sign(accountWallet, _getPermitDigest({
+            asset_:    address(syrupUsdc),
+            owner_:    depositor,
+            spender_:  address(syrupUserActions),
+            value_:    syrupUsdcIn - 1,
+            nonce_:    0,
+            deadline_: deadline
+            })
+        );
+
+        vm.expectRevert("ERC20:P:INVALID_SIGNATURE");
+        vm.prank(account);
+        syrupUserActions.swapToDaiWithPermit(syrupUsdcIn, 0, deadline, v, r, s);
     }
 
     function testFork_swapToDai_insufficientBalance() external {
@@ -367,9 +413,28 @@ contract SyrupUserActionsSwapToDaiTests is SyrupUserActionsTestBase {
         syrupUserActions.swapToDai(syrupUsdcIn, 0);
     }
 
-    function testFork_swapToDai_notEnoughOut() external {
-        _mintSyrupUsdc(address(account), syrupUsdcIn);
+    function testFork_swapToDaiWithPermit_insufficientBalance() external {
+        uint256 deadline  = block.timestamp;
+        address depositor = accountWallet.addr;
 
+        _burnSyrupUsdc(account, 1);
+
+        ( uint8 v, bytes32 r, bytes32 s ) = vm.sign(accountWallet, _getPermitDigest({
+            asset_:    address(syrupUsdc),
+            owner_:    depositor,
+            spender_:  address(syrupUserActions),
+            value_:    syrupUsdcIn,
+            nonce_:    0,
+            deadline_: deadline
+            })
+        );
+
+        vm.expectRevert("SUA:STDWP:TRANSFER_FROM_FAILED");
+        vm.prank(account);
+        syrupUserActions.swapToDaiWithPermit(syrupUsdcIn, 0, deadline, v, r, s);
+    }
+
+    function testFork_swapToDai_notEnoughOut() external {
         vm.prank(account);
         syrupUsdc.approve(address(syrupUserActions), syrupUsdcIn);
 
@@ -378,9 +443,26 @@ contract SyrupUserActionsSwapToDaiTests is SyrupUserActionsTestBase {
         syrupUserActions.swapToDai(syrupUsdcIn, 100e18);
     }
 
-    function testFork_swapToDai_success() public {
-        _mintSyrupUsdc(address(account), syrupUsdcIn);
+    function testFork_swapToDaiWithPermit_notEnoughOut() external {
+        uint256 deadline  = block.timestamp;
+        address depositor = accountWallet.addr;
 
+        ( uint8 v, bytes32 r, bytes32 s ) = vm.sign(accountWallet, _getPermitDigest({
+            asset_:    address(syrupUsdc),
+            owner_:    depositor,
+            spender_:  address(syrupUserActions),
+            value_:    syrupUsdcIn,
+            nonce_:    0,
+            deadline_: deadline
+            })
+        );
+
+        vm.expectRevert("SAU:STDWP:INSUFFICIENT_DAI_OUT");
+        vm.prank(account);
+        syrupUserActions.swapToDaiWithPermit(syrupUsdcIn, 100e18, deadline, v, r, s);
+    }
+
+    function testFork_swapToDai_success() public {
         uint256 poolOutput = IPoolLike(SYRUP_USDC).convertToExitAssets(syrupUsdcIn);
         uint256 minDaiOut  = poolOutput * 0.995e18 / 1e18;
 
@@ -407,9 +489,47 @@ contract SyrupUserActionsSwapToDaiTests is SyrupUserActionsTestBase {
         assertTrue(daiOut >= minDaiOut);
     }
 
-    function testForkFuzz_swapToDai(uint256 syrupUsdcIn_, uint256 slippage_) external {
+    function testFork_swapToDaiWithPermit_success() external {
+        address depositor  = accountWallet.addr;
+        uint256 deadline   = block.timestamp;
+        uint256 poolOutput = IPoolLike(SYRUP_USDC).convertToExitAssets(syrupUsdcIn);
+        uint256 minDaiOut  = poolOutput * 0.995e18 / 1e18;
+
+        ( uint8 v, bytes32 r, bytes32 s ) = vm.sign(accountWallet, _getPermitDigest({
+            asset_:    address(syrupUsdc),
+            owner_:    depositor,
+            spender_:  address(syrupUserActions),
+            value_:    syrupUsdcIn,
+            nonce_:    0,
+            deadline_: deadline
+            })
+        );
+
+        uint256 initialSdaiBalance = IERC20Like(SDAI).balanceOf(address(BAL_VAULT));
+
+        assertEq(syrupUsdc.balanceOf(address(account)),          syrupUsdcIn);
+        assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
+        assertEq(dai.balanceOf(address(account)),                0);
+        assertEq(dai.balanceOf(address(syrupUserActions)),       0);
+
+        vm.prank(account);
+        uint256 daiOut = syrupUserActions.swapToDaiWithPermit(syrupUsdcIn, minDaiOut, deadline, v, r, s);
+
+        assertEq(syrupUsdc.balanceOf(address(account)),          0);
+        assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
+        assertEq(dai.balanceOf(address(account)),                daiOut);
+        assertEq(dai.balanceOf(address(syrupUserActions)),       0);
+
+        assertTrue(initialSdaiBalance > IERC20Like(SDAI).balanceOf(address(BAL_VAULT)));
+
+        assertTrue(daiOut >= minDaiOut);
+    }
+
+    function testForkFuzz_swapToDai(uint256 amount_, uint256 slippage_) external {
+        _burnSyrupUsdc(account, syrupUsdcIn);
+
         // Increase this value once the balancer pool has more liquidity
-        syrupUsdcIn = bound(syrupUsdcIn_, 2, 400e6);
+        syrupUsdcIn = bound(amount_, 2, 400e6);
         slippage_   = bound(slippage_, 10, 100);  // From 10 to 100 bps
 
         uint256 minDaiOut = syrupUsdcIn * (10000 - slippage_) / 10000;
@@ -428,6 +548,49 @@ contract SyrupUserActionsSwapToDaiTests is SyrupUserActionsTestBase {
 
         vm.prank(account);
         uint256 daiOut = syrupUserActions.swapToDai(syrupUsdcIn, minDaiOut);
+
+        assertEq(syrupUsdc.balanceOf(address(account)),          0);
+        assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
+        assertEq(dai.balanceOf(address(account)),                daiOut);
+        assertEq(dai.balanceOf(address(syrupUserActions)),       0);
+
+        assertTrue(initialSdaiBalance > IERC20Like(SDAI).balanceOf(address(BAL_VAULT)));
+
+        assertTrue(daiOut >= minDaiOut);
+    }
+
+    function testForkFuzz_swapToDaiWithPermit_success(uint256 amount_, uint256 slippage_) external {
+        _burnSyrupUsdc(account, syrupUsdcIn);
+
+        address depositor  = accountWallet.addr;
+        uint256 deadline   = block.timestamp;
+
+        syrupUsdcIn = bound(amount_, 2, 400e6);
+        slippage_   = bound(slippage_, 20, 100);  // From 20 to 100 bps
+
+        uint256 minDaiOut = syrupUsdcIn * (10000 - slippage_) / 10000;
+
+        _mintSyrupUsdc(address(account), syrupUsdcIn);
+
+        uint256 initialSdaiBalance = IERC20Like(SDAI).balanceOf(address(BAL_VAULT));
+
+        ( uint8 v, bytes32 r, bytes32 s ) = vm.sign(accountWallet, _getPermitDigest({
+            asset_:    address(syrupUsdc),
+            owner_:    depositor,
+            spender_:  address(syrupUserActions),
+            value_:    syrupUsdcIn ,
+            nonce_:    0,
+            deadline_: deadline
+            })
+        );
+
+        assertEq(syrupUsdc.balanceOf(address(account)),          syrupUsdcIn);
+        assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
+        assertEq(dai.balanceOf(address(account)),                0);
+        assertEq(dai.balanceOf(address(syrupUserActions)),       0);
+
+        vm.prank(account);
+        uint256 daiOut = syrupUserActions.swapToDaiWithPermit(syrupUsdcIn, minDaiOut, deadline, v, r, s);
 
         assertEq(syrupUsdc.balanceOf(address(account)),          0);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);

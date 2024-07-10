@@ -16,6 +16,25 @@ interface ISyrupUserActions {
     function swapToDai(uint256 syrupUsdcIn, uint256 minDaiOut) external returns (uint256 daiOut);
 
     /**
+     *  @dev    Swaps SyrupUSDC LP token for DAI in a single transaction with permit.
+     *  @param  syrupUsdcIn The amount of SyrupUSDC to swap.
+     *  @param  minDaiOut   The minimum amount of DAI to receive.
+     *  @param  deadline    The deadline for the permit.
+     *  @param  v           The v value of the permit signature.
+     *  @param  r           The r value of the permit signature.
+     *  @param  s           The s value of the permit signature.
+     *  @return daiOut      The amount of DAI received.
+     */
+    function swapToDaiWithPermit(
+        uint256 syrupUsdcIn,
+        uint256 minDaiOut,
+        uint256 deadline,
+        uint8   v,
+        bytes32 r,
+        bytes32 s
+    ) external returns (uint256 daiOut);
+
+    /**
      *  @dev    Swaps SyrupUSDC LP token for USDC in a single transaction.
      *  @param  syrupUsdcIn The amount of SyrupUSDC to swap.
      *  @param  minUsdcOut  The minimum amount of USDC to receive.
