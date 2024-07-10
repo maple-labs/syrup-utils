@@ -5,7 +5,7 @@ import { ERC20Helper } from "../modules/erc20-helper/src/ERC20Helper.sol";
 
 import { ISyrupUserActions } from "./interfaces/ISyrupUserActions.sol";
 
-import { IBalancerVaultLike, IPSMLike, ISdaiLike } from "./interfaces/Interfaces.sol";
+import { IBalancerVaultLike, IERC20Like, IPSMLike, ISdaiLike } from "./interfaces/Interfaces.sol";
 
 contract SyrupUserActions is ISyrupUserActions {
 
@@ -55,6 +55,44 @@ contract SyrupUserActions is ISyrupUserActions {
         usdcOut_ = _swapDaiForUsdc(daiOut, msg.sender, minUsdcOut_);
     }
 
+     function swapToUsdcWithPermit(
+        uint256 syrupUsdcIn_,
+        uint256 minUsdcOut_,
+        uint256 deadline_,
+        uint8   v_,
+        bytes32 r_,
+        bytes32 s_
+    )
+        external override returns (uint256 usdcOut_)
+    {
+        // 1. Permit the use of SyrupUSDC from the user
+        _permit(SYRUP_USDC, deadline_, syrupUsdcIn_, v_, r_, s_);
+
+        // 2. Pull SyrupUSDC from the user
+        require(ERC20Helper.transferFrom(SYRUP_USDC, msg.sender, address(this), syrupUsdcIn_), "SUA:STUWP:TRANSFER_FROM_FAILED");
+
+        // 3. Swap to sDAI
+        uint256 sdaiAmount = _swapViaBalancer(syrupUsdcIn_);
+
+        // 4. Redeem sDAI to DAI
+        uint256 daiOut = _redeemForDai(sdaiAmount);
+
+        // 5. Swap DAI for USDC using the PSM
+        usdcOut_ = _swapDaiForUsdc(daiOut, msg.sender, minUsdcOut_);
+    }
+
+    function _permit(address asset_, uint256 deadline_, uint256 amount_, uint8 v_, bytes32 r_, bytes32 s_) internal {
+        uint256 allowance_ = IERC20Like(asset_).allowance(msg.sender, address(this));
+
+        if (allowance_ < amount_) {
+            IERC20Like(asset_).permit(msg.sender, address(this), amount_, deadline_, v_, r_, s_);
+        }
+    }
+
+    function _redeemForDai(uint256 sdaiIn) internal returns (uint256 daiOut_) {
+        daiOut_ = ISdaiLike(SDAI).redeem(sdaiIn, address(this), address(this));
+    }
+
     function _swapDaiForUsdc(uint256 daiIn_, address receiver_, uint256 minUsdcOut_) internal returns (uint256 usdcOut_) {
         IPSMLike psm = IPSMLike(PSM);
         // Calculate the exact amount of gems we expect to receive given this amount of assets
@@ -89,10 +127,6 @@ contract SyrupUserActions is ISyrupUserActions {
             limit:      0,
             deadline:   block.timestamp
         });
-    }
-
-    function _redeemForDai(uint256 sdaiIn) internal returns (uint256 daiOut_) {
-        daiOut_ = ISdaiLike(SDAI).redeem(sdaiIn, address(this), address(this));
     }
 
 }

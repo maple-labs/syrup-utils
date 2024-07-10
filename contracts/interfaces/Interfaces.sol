@@ -36,6 +36,10 @@ interface IERC20Like {
 
     function balanceOf(address account) external view returns (uint256 balance);
 
+    function DOMAIN_SEPARATOR() external view returns (bytes32 domainSeparator);
+
+    function PERMIT_TYPEHASH() external view returns (bytes32 permitTypehash);
+
     function approve(address spender, uint256 amount) external returns (bool success);
 
     function permit(address owner, address spender, uint amount, uint deadline, uint8 v, bytes32 r, bytes32 s) external;

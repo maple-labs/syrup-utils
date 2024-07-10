@@ -23,6 +23,25 @@ interface ISyrupUserActions {
      */
     function swapToUsdc(uint256 syrupUsdcIn, uint256 minUsdcOut) external returns (uint256 usdcOut);
 
+    /**
+     *  @dev    Swaps SyrupUSDC LP token for USDC in a single transaction with permit.
+     *  @param  syrupUsdcIn The amount of SyrupUSDC to swap.
+     *  @param  minUsdcOut  The minimum amount of USDC to receive.
+     *  @param  deadline    The deadline for the permit.
+     *  @param  v           The v value of the permit signature.
+     *  @param  r           The r value of the permit signature.
+     *  @param  s           The s value of the permit signature.
+     *  @return usdcOut     The amount of USDC received.
+     */
+    function swapToUsdcWithPermit(
+        uint256 syrupUsdcIn,
+        uint256 minUsdcOut,
+        uint256 deadline,
+        uint8   v,
+        bytes32 r,
+        bytes32 s
+    ) external returns (uint256 usdcOut);
+
     /**************************************************************************************************************************************/
     /*** View Functions                                                                                                                 ***/
     /**************************************************************************************************************************************/
