@@ -51,7 +51,7 @@ interface IMplUserActions {
     function xmpl() external returns (address xmpl);
 
     /**************************************************************************************************************************************/
-    /*** Functions                                                                                                                      ***/
+    /*** User Actions                                                                                                                   ***/
     /**************************************************************************************************************************************/
 
     /**
@@ -63,6 +63,26 @@ interface IMplUserActions {
     function migrateAndStake(address receiver, uint256 mplIn) external returns (uint256 stsyrupOut);
 
     /**
+     *  @dev    Migrates MPL to SYRUP and then stakes it.
+     *          Approves the transfer of MPL with the use of a permit signature.
+     *  @param  receiver   Address that will receive stSYRUP.
+     *  @param  mplIn      Amount of MPL to migrate.
+     *  @param  deadline   The deadline of the permit.
+     *  @param  v          The v value of the permit signature.
+     *  @param  r          The r value of the permit signature.
+     *  @param  s          The s value of the permit signature.
+     *  @return stsyrupOut Amount of stSYRUP received.
+     */
+    function migrateAndStakeWithPermit(
+        address receiver,
+        uint256 mplIn,
+        uint256 deadline,
+        uint8   v,
+        bytes32 r,
+        bytes32 s
+    ) external returns (uint256 stsyrupOut);
+
+    /**
      *  @dev    Redeems xMPL into MPL and then migrates it to SYRUP.
      *  @param  receiver Address that will receive SYRUP.
      *  @param  xmplIn   Amount of xMPL to redeem.
@@ -71,11 +91,51 @@ interface IMplUserActions {
     function redeemAndMigrate(address receiver, uint256 xmplIn) external returns (uint256 syrupOut);
 
     /**
+     *  @dev    Redeems xMPL into MPL and then migrates it to SYRUP.
+     *          Approves the transfer of xMPL with the use of a permit signature.
+     *  @param  receiver Address that will receive SYRUP.
+     *  @param  xmplIn   Amount of xMPL to redeem.
+     *  @param  deadline The deadline of the permit.
+     *  @param  v        The v value of the permit signature.
+     *  @param  r        The r value of the permit signature.
+     *  @param  s        The s value of the permit signature.
+     *  @return syrupOut Amount of SYRUP received.
+     */
+    function redeemAndMigrateWithPermit(
+        address receiver,
+        uint256 xmplIn,
+        uint256 deadline,
+        uint8   v,
+        bytes32 r,
+        bytes32 s
+    ) external returns (uint256 syrupOut);
+
+    /**
      *  @dev    Redeems xMPL into MPL, migrates it to SYRUP, and then stakes it.
      *  @param  receiver   Address that will receive stSYRUP.
      *  @param  xmplIn     Amount of xMPL to redeem.
      *  @return stsyrupOut Amount of stSYRUP received.
      */
     function redeemAndMigrateAndStake(address receiver, uint256 xmplIn) external returns (uint256 stsyrupOut);
+
+    /**
+     *  @dev    Redeems xMPL into MPL, migrates it to SYRUP, and then stakes it.
+     *          Approves the transfer of xMPL with the use of a permit signature.
+     *  @param  receiver   sAddress that will receive stSYRUP.
+     *  @param  xmplIn     Amount of xMPL to redeem.
+     *  @param  deadline   The deadline of the permit.
+     *  @param  v          The v value of the permit signature.
+     *  @param  r          The r value of the permit signature.
+     *  @param  s          The s value of the permit signature.
+     *  @return stsyrupOut Amount of stSYRUP received.
+     */
+    function redeemAndMigrateAndStakeWithPermit(
+        address receiver,
+        uint256 xmplIn,
+        uint256 deadline,
+        uint8   v,
+        bytes32 r,
+        bytes32 s
+    ) external returns (uint256 stsyrupOut);
 
 }
