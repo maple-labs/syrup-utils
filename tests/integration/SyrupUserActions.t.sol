@@ -7,6 +7,7 @@ import { IERC20Like, IPoolLike } from "../../contracts/interfaces/Interfaces.sol
 import { SyrupUserActions }      from "../../contracts/SyrupUserActions.sol";
 
 import { MockReenteringSdai } from "../utils/Mocks.sol";
+import { IPSMLike }           from "../utils/Interfaces.sol";
 
 contract SyrupUserActionsTestBase is Test {
 
@@ -14,6 +15,7 @@ contract SyrupUserActionsTestBase is Test {
 
     address constant BAL_VAULT    = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
     address constant DAI          = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
+    address constant PSM          = 0x89B78CfA322F6C5dE0aBcEecab66Aee45393cC5A;
     address constant SDAI         = 0x83F20F44975D03b1b09e64809B757c47f942BEeA;
     address constant SYRUP_USDC   = 0x80ac24aA929eaF5013f6436cdA2a7ba190f5Cc0b;
     address constant SYRUP_SOURCE = 0xAdA1fc89b42F15A1Ce5395456CF4E0A90A9e8EfE;
@@ -319,15 +321,47 @@ contract SyrupUserActionsSwapToUsdcTests is SyrupUserActionsTestBase {
         assertTrue(usdcOut >= minOutput);
     }
 
-    function testForkFuzz_swapToUsdc(uint256 syrupUsdcIn_, uint256 slippage_) external {
+    function testFork_swapToUsdc_nonZeroTout() external {
+        __setTout(0.1e18); // 10% Fee on PSM
+
+        assertEq(IPSMLike(PSM).tout(), 0.1e18);
+
+        uint256 poolOutput = IPoolLike(SYRUP_USDC).convertToExitAssets(syrupUsdcIn);
+        uint256 minOutput  = poolOutput * 0.9e18 / 1e18;
+
+        vm.prank(account);
+        syrupUsdc.approve(address(syrupUserActions), syrupUsdcIn);
+
+        assertEq(syrupUsdc.balanceOf(address(account)),          syrupUsdcIn);
+        assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
+        assertEq(usdc.balanceOf(address(account)),               0);
+        assertEq(usdc.balanceOf(address(syrupUserActions)),      0);
+
+        vm.prank(account);
+        uint256 usdcOut = syrupUserActions.swapToUsdc(syrupUsdcIn, minOutput);
+
+        assertEq(syrupUsdc.balanceOf(address(account)),          0);
+        assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
+        assertEq(usdc.balanceOf(address(account)),               usdcOut);
+        assertEq(usdc.balanceOf(address(syrupUserActions)),      0);
+
+        assertTrue(usdcOut >= minOutput);
+    }
+
+    function testForkFuzz_swapToUsdc_withTout(uint256 syrupUsdcIn_, uint256 slippage_, uint256 tout_) external {
         // Burn existing amount of syrupUsdc in the account
         _burnSyrupUsdc(account, syrupUsdcIn);
 
         // Increase this value once the balancer pool has more liquidity
-        syrupUsdcIn = bound(syrupUsdcIn_, 2, 400e6);
-        slippage_   = bound(slippage_, 20, 100);  // From 20 to 100 bps
+        syrupUsdcIn = bound(syrupUsdcIn_, 1e5, 400e6);
+        tout_       = bound(tout_, 0.002e18, 0.01e18);  // 0.01e18 = 1%
+        slippage_   = bound(slippage_, 0.002e18, 0.01e18);
 
-        uint256 minUsdcOut = syrupUsdcIn * (10000 - slippage_) / 10000;
+        uint256 minUsdcOut = syrupUsdcIn * (1e18 - (slippage_ + tout_)) / 1e18;
+
+        __setTout(tout_);
+
+        assertEq(IPSMLike(PSM).tout(), tout_);
 
         _mintSyrupUsdc(address(account), syrupUsdcIn);
 
@@ -388,6 +422,13 @@ contract SyrupUserActionsSwapToUsdcTests is SyrupUserActionsTestBase {
         assertEq(usdc.balanceOf(address(syrupUserActions)),      0);
 
         assertTrue(usdcOut >= minUsdcOut);
+    }
+
+    function __setTout(uint256 tout_) internal {
+        address ward = 0xBE8E3e3618f7474F8cB1d074A26afFef007E98FB;
+
+        vm.prank(ward);
+        IPSMLike(PSM).file("tout", tout_);  // 1e18 or WAD is a 100% fee
     }
 
 }

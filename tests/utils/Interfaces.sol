@@ -14,3 +14,11 @@ interface ISyrupUserActionsLike {
     function swapToDai(uint256 syrupUsdcIn_, uint256 minDaiOut_) external returns (uint256 daiOut_);
 
 }
+
+interface IPSMLike {
+
+    function file(bytes32 what, uint256 data) external;
+
+    function tout() external returns (uint256 tout_);
+
+}
