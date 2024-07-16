@@ -8,3 +8,9 @@ interface IStakedSyrupLike {
     function deposit(uint256 assets, address receiver) external returns (uint256 shares);
 
 }
+
+interface ISyrupUserActionsLike {
+
+    function swapToDai(uint256 syrupUsdcIn_, uint256 minDaiOut_) external returns (uint256 daiOut_);
+
+}

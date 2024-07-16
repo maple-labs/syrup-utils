@@ -20,18 +20,32 @@ contract SyrupUserActions is ISyrupUserActions {
 
     bytes32 immutable public override POOL_ID;
 
+    uint256 internal _locked;
+
     constructor(bytes32 poolId_) {
         POOL_ID = poolId_;
 
+        _locked = 1;
+
         require(ERC20Helper.approve(SYRUP_USDC, BAL_VAULT, type(uint256).max), "SUA:C:SYRUP_APPROVE_FAIL");
         require(ERC20Helper.approve(DAI, PSM, type(uint256).max),              "SUA:C:DAI_APPROVE_FAIL");
+    }
+
+    modifier nonReentrant() {
+        require(_locked == 1, "SUA:LOCKED");
+
+        _locked = 2;
+
+        _;
+
+        _locked = 1;
     }
 
     /**************************************************************************************************************************************/
     /*** User Actions                                                                                                                   ***/
     /**************************************************************************************************************************************/
 
-    function swapToDai(uint256 syrupUsdcIn_, uint256 minDaiOut_) external override returns (uint256 daiOut_) {
+    function swapToDai(uint256 syrupUsdcIn_, uint256 minDaiOut_) external override nonReentrant returns (uint256 daiOut_) {
         daiOut_ = _swap(syrupUsdcIn_, minDaiOut_, DAI);
     }
 
@@ -43,14 +57,14 @@ contract SyrupUserActions is ISyrupUserActions {
         bytes32 r_,
         bytes32 s_
     )
-        external override returns (uint256 daiOut_)
+        external override nonReentrant returns (uint256 daiOut_)
     {
         _permit(SYRUP_USDC, deadline_, syrupUsdcIn_, v_, r_, s_);
 
         daiOut_ = _swap(syrupUsdcIn_, minDaiOut_, DAI);
     }
 
-    function swapToUsdc(uint256 syrupUsdcIn_, uint256 minUsdcOut_) external override returns (uint256 usdcOut_) {
+    function swapToUsdc(uint256 syrupUsdcIn_, uint256 minUsdcOut_) external override nonReentrant returns (uint256 usdcOut_) {
        usdcOut_ = _swap(syrupUsdcIn_, minUsdcOut_, USDC);
     }
 
@@ -62,7 +76,7 @@ contract SyrupUserActions is ISyrupUserActions {
         bytes32 r_,
         bytes32 s_
     )
-        external override returns (uint256 usdcOut_)
+        external override nonReentrant returns (uint256 usdcOut_)
     {
         _permit(SYRUP_USDC, deadline_, syrupUsdcIn_, v_, r_, s_);
 

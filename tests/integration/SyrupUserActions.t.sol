@@ -6,6 +6,8 @@ import { console2 as console, Test, Vm } from "../../modules/forge-std/src/Test.
 import { IERC20Like, IPoolLike } from "../../contracts/interfaces/Interfaces.sol";
 import { SyrupUserActions }      from "../../contracts/SyrupUserActions.sol";
 
+import { MockReenteringSdai } from "../utils/Mocks.sol";
+
 contract SyrupUserActionsTestBase is Test {
 
     event Swap(address indexed owner, address tokenIn, uint256 amountIn, address tokenOut, uint256 amountOut);
@@ -84,6 +86,10 @@ contract SyrupUserActionsConstructorTests is SyrupUserActionsTestBase {
         assertEq(syrupUserActions.USDC(),          0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
         assertEq(syrupUserActions.POOL_ID(),       POOL_ID);
         assertEq(syrupUserActions.PSM_PRECISION(), 1e12);
+
+        bytes32 locked = vm.load(address(syrupUserActions), bytes32(0));
+
+        assertEq(uint256(locked), 1);
     }
 
 }
@@ -212,6 +218,44 @@ contract SyrupUserActionsSwapToUsdcTests is SyrupUserActionsTestBase {
         vm.expectRevert("SUA:SDU:INSUFFICIENT_AMOUNT_OUT");
         vm.prank(account);
         syrupUserActions.swapToUsdcWithPermit(syrupUsdcIn, 100e6, deadline, v, r, s);
+    }
+
+    function testFork_swapToUsdc_reentrancy() external {
+        _mintSyrupUsdc(address(account), syrupUsdcIn);
+
+        vm.prank(account);
+        syrupUsdc.approve(address(syrupUserActions), syrupUsdcIn);
+
+        address reentrantSdai = address(new MockReenteringSdai(address(syrupUserActions)));
+        vm.etch(SDAI, reentrantSdai.code);
+
+        vm.expectRevert("SUA:LOCKED");
+        vm.prank(account);
+        syrupUserActions.swapToUsdc(syrupUsdcIn, 0);
+    }
+
+    function testFork_swapToUsdcWithPermit_reentrancy() external {
+        _mintSyrupUsdc(address(account), syrupUsdcIn);
+
+        vm.prank(account);
+        syrupUsdc.approve(address(syrupUserActions), syrupUsdcIn);
+
+        ( uint8 v, bytes32 r, bytes32 s ) = vm.sign(accountWallet, _getPermitDigest({
+            asset_:    address(syrupUsdc),
+            owner_:    account,
+            spender_:  address(syrupUserActions),
+            value_:    syrupUsdcIn,
+            nonce_:    0,
+            deadline_: block.timestamp
+            })
+        );
+
+        address reentrantSdai = address(new MockReenteringSdai(address(syrupUserActions)));
+        vm.etch(SDAI, reentrantSdai.code);
+
+        vm.expectRevert("SUA:LOCKED");
+        vm.prank(account);
+        syrupUserActions.swapToUsdcWithPermit(syrupUsdcIn, 0, block.timestamp, v, r, s);
     }
 
     function testFork_swapToUsdc_success() public {
@@ -468,6 +512,44 @@ contract SyrupUserActionsSwapToDaiTests is SyrupUserActionsTestBase {
         vm.expectRevert("SUA:S:INSUFFICIENT_AMOUNT_OUT");
         vm.prank(account);
         syrupUserActions.swapToDaiWithPermit(syrupUsdcIn, 100e18, deadline, v, r, s);
+    }
+
+    function testFork_swapToDai_reentrancy() external {
+        _mintSyrupUsdc(address(account), syrupUsdcIn);
+
+        vm.prank(account);
+        syrupUsdc.approve(address(syrupUserActions), syrupUsdcIn);
+
+        address reentrantSdai = address(new MockReenteringSdai(address(syrupUserActions)));
+        vm.etch(SDAI, reentrantSdai.code);
+
+        vm.expectRevert("SUA:LOCKED");
+        vm.prank(account);
+        syrupUserActions.swapToDai(syrupUsdcIn, 0);
+    }
+
+    function testFork_swapToDaiWithPermit_reentrancy() external {
+        _mintSyrupUsdc(address(account), syrupUsdcIn);
+
+        vm.prank(account);
+        syrupUsdc.approve(address(syrupUserActions), syrupUsdcIn);
+
+        ( uint8 v, bytes32 r, bytes32 s ) = vm.sign(accountWallet, _getPermitDigest({
+            asset_:    address(syrupUsdc),
+            owner_:    account,
+            spender_:  address(syrupUserActions),
+            value_:    syrupUsdcIn,
+            nonce_:    0,
+            deadline_: block.timestamp
+            })
+        );
+
+        address reentrantSdai = address(new MockReenteringSdai(address(syrupUserActions)));
+        vm.etch(SDAI, reentrantSdai.code);
+
+        vm.expectRevert("SUA:LOCKED");
+        vm.prank(account);
+        syrupUserActions.swapToDaiWithPermit(syrupUsdcIn, 0, block.timestamp, v, r, s);
     }
 
     function testFork_swapToDai_success() public {

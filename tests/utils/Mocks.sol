@@ -3,6 +3,8 @@ pragma solidity ^0.8.0;
 
 import { MockERC20 as BaseMockERC20 } from "../../modules/erc20/contracts/test/mocks/MockERC20.sol";
 
+import { ISyrupUserActionsLike } from "./Interfaces.sol";
+
 contract MockERC20 is BaseMockERC20 {
 
     constructor(string memory name_, string memory symbol_, uint8 decimals_) BaseMockERC20(name_, symbol_, decimals_) {}
@@ -190,6 +192,20 @@ contract MockRDT is BaseMockERC20 {
 
         _burn(owner_, shares_);
         MockERC20(asset).transfer(receiver_, assets_);
+    }
+
+}
+
+contract MockReenteringSdai {
+
+    address immutable target;
+
+    constructor(address target_) {
+        target = target_;
+    }
+
+    fallback() external {
+        ISyrupUserActionsLike(target).swapToDai(0, 0);
     }
 
 }
