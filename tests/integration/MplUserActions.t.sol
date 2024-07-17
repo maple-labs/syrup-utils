@@ -137,9 +137,204 @@ contract MigrateAndStakeWithPermitTests is MplUserActionsTestBase {
 
 contract RedeemAndMigrateTests is MplUserActionsTestBase {
 
+    function test_integration_redeemAndMigrate_zeroAmount() external {
+        vm.prank(sender.addr);
+        vm.expectRevert("MUA:RAM:ZERO_AMOUNT");
+        actions.redeemAndMigrate(receiver.addr, 0);
+    }
+
+    function test_integration_redeemAndMigrate_insufficientApproval() external {
+        vm.prank(sender.addr);
+        mpl.approve(address(xmpl), mplIn);
+
+        vm.prank(sender.addr);
+        xmpl.deposit(mplIn, sender.addr);
+
+        vm.prank(sender.addr);
+        xmpl.approve(address(actions), xmplIn - 1);
+
+        vm.prank(sender.addr);
+        vm.expectRevert("MUA:RAM:TRANSFER_FAIL");
+        actions.redeemAndMigrate(receiver.addr, xmplIn);
+    }
+
+    function test_integration_redeemAndMigrate_insufficientBalance() external {
+        vm.prank(sender.addr);
+        mpl.approve(address(xmpl), mplIn);
+
+        vm.prank(sender.addr);
+        xmpl.deposit(mplIn, sender.addr);
+
+        vm.prank(sender.addr);
+        xmpl.approve(address(actions), xmplIn + 1);
+
+        vm.prank(sender.addr);
+        vm.expectRevert("MUA:RAM:TRANSFER_FAIL");
+        actions.redeemAndMigrate(receiver.addr, xmplIn + 1);
+    }
+
+    function test_integration_redeemAndMigrate_migratorInactive() external {
+        vm.prank(sender.addr);
+        mpl.approve(address(xmpl), mplIn);
+
+        vm.prank(sender.addr);
+        xmpl.deposit(mplIn, sender.addr);
+
+        vm.prank(sender.addr);
+        xmpl.approve(address(actions), xmplIn);
+
+        vm.prank(sender.addr);
+        vm.expectRevert("M:M:INACTIVE");
+        actions.redeemAndMigrate(receiver.addr, xmplIn);
+    }
+
+    function test_integration_redeemAndMigrate_success() external {
+        vm.prank(governor.addr);
+        migrator.setActive(true);
+
+        vm.prank(sender.addr);
+        mpl.approve(address(xmpl), mplIn);
+
+        vm.prank(sender.addr);
+        xmpl.deposit(mplIn, sender.addr);
+
+        vm.prank(sender.addr);
+        xmpl.approve(address(actions), xmplIn);
+
+        assertBalances({
+            accounts: [address(actions), address(migrator), address(receiver.addr), address(sender.addr), address(stsyrup), address(xmpl)],
+            mpls:     [uint256(0),       uint256(0),        uint256(0),             mplSupply - mplIn,    uint256(0),       mplIn],
+            xmpls:    [uint256(0),       uint256(0),        uint256(0),             xmplIn,               uint256(0),       uint256(0)],
+            syrups:   [uint256(0),       syrupSupply,       uint256(0),             uint256(0),           uint256(0),       uint256(0)],
+            stsyrups: [uint256(0),       uint256(0),        uint256(0),             uint256(0),           uint256(0),       uint256(0)]
+        });
+
+        vm.expectEmit();
+        emit Migrated(sender.addr, address(xmpl), xmplIn, receiver.addr, address(syrup), syrupOut);
+
+        vm.prank(sender.addr);
+        uint256 amount = actions.redeemAndMigrate(receiver.addr, xmplIn);
+
+        uint256 mplDiff   = mplSupply - mplIn;
+        uint256 syrupDiff = syrupSupply - syrupOut;
+
+        assertEq(amount, stsyrupOut);
+        assertBalances({
+            accounts: [address(actions), address(migrator), address(receiver.addr), address(sender.addr), address(stsyrup), address(xmpl)],
+            mpls:     [uint256(0),       mplIn,             uint256(0),             mplDiff,              uint256(0),       uint256(0)],
+            xmpls:    [uint256(0),       uint256(0),        uint256(0),             uint256(0),           uint256(0),       uint256(0)],
+            syrups:   [uint256(0),       syrupDiff,         syrupOut,               uint256(0),           uint256(0),       uint256(0)],
+            stsyrups: [uint256(0),       uint256(0),        uint256(0),             uint256(0),           uint256(0),       uint256(0)]
+        });
+    }
+
 }
 
 contract RedeemAndMigrateWithPermitTests is MplUserActionsTestBase {
+
+    function test_integration_redeemAndMigrateWithPermit_expiredDeadline() external {
+        ( uint8 v, bytes32 r, bytes32 s ) = signPermit(address(xmpl), sender, address(actions), xmplIn, 0, block.timestamp);
+
+        vm.warp(block.timestamp + 1 seconds);
+        vm.prank(sender.addr);
+        vm.expectRevert("ERC20:P:EXPIRED");
+        actions.redeemAndMigrateWithPermit(receiver.addr, xmplIn, block.timestamp - 1 seconds, v, r, s);
+    }
+
+    function test_integration_redeemAndMigrateWithPermit_malleable() external {
+        ( uint8 v, bytes32 r, bytes32 s ) = signPermit(address(xmpl), sender, address(actions), xmplIn, 0, block.timestamp);
+
+        v *= 2;
+
+        vm.prank(sender.addr);
+        vm.expectRevert("ERC20:P:MALLEABLE");
+        actions.redeemAndMigrateWithPermit(receiver.addr, xmplIn, block.timestamp, v, r, s);
+    }
+
+    function test_integration_redeemAndMigrateWithPermit_invalidSignature() external {
+        ( uint8 v, bytes32 r, bytes32 s ) = signPermit(address(xmpl), sender, address(actions), xmplIn, 0, block.timestamp);
+
+        s <<= 1;
+
+        vm.prank(sender.addr);
+        vm.expectRevert("ERC20:P:INVALID_SIGNATURE");
+        actions.redeemAndMigrateWithPermit(receiver.addr, xmplIn, block.timestamp, v, r, s);
+    }
+
+    function test_integration_redeemAndMigrateWithPermit_zeroAmount() external {
+        ( uint8 v, bytes32 r, bytes32 s ) = signPermit(address(xmpl), sender, address(actions), 0, 0, block.timestamp);
+
+        vm.prank(sender.addr);
+        vm.expectRevert("MUA:RAM:ZERO_AMOUNT");
+        actions.redeemAndMigrateWithPermit(receiver.addr, 0, block.timestamp, v, r, s);
+    }
+
+    function test_integration_redeemAndMigrateWithPermit_insufficientBalance() external {
+        vm.prank(sender.addr);
+        mpl.approve(address(xmpl), mplIn);
+
+        vm.prank(sender.addr);
+        xmpl.deposit(mplIn, sender.addr);
+
+        ( uint8 v, bytes32 r, bytes32 s ) = signPermit(address(xmpl), sender, address(actions), xmplIn + 1, 0, block.timestamp);
+
+        vm.prank(sender.addr);
+        vm.expectRevert("MUA:RAM:TRANSFER_FAIL");
+        actions.redeemAndMigrateWithPermit(receiver.addr, xmplIn + 1, block.timestamp, v, r, s);
+    }
+
+    function test_integration_redeemAndMigrateWithPermit_migratorInactive() external {
+        vm.prank(sender.addr);
+        mpl.approve(address(xmpl), mplIn);
+
+        vm.prank(sender.addr);
+        xmpl.deposit(mplIn, sender.addr);
+
+        ( uint8 v, bytes32 r, bytes32 s ) = signPermit(address(xmpl), sender, address(actions), xmplIn, 0, block.timestamp);
+
+        vm.prank(sender.addr);
+        vm.expectRevert("M:M:INACTIVE");
+        actions.redeemAndMigrateWithPermit(receiver.addr, xmplIn, block.timestamp, v, r, s);
+    }
+
+    function test_integration_redeemAndMigrateWithPermit_success() external {
+        vm.prank(governor.addr);
+        migrator.setActive(true);
+
+        vm.prank(sender.addr);
+        mpl.approve(address(xmpl), mplIn);
+
+        vm.prank(sender.addr);
+        xmpl.deposit(mplIn, sender.addr);
+
+        ( uint8 v, bytes32 r, bytes32 s ) = signPermit(address(xmpl), sender, address(actions), xmplIn, 0, block.timestamp);
+
+        assertBalances({
+            accounts: [address(actions), address(migrator), address(receiver.addr), address(sender.addr), address(stsyrup), address(xmpl)],
+            mpls:     [uint256(0),       uint256(0),        uint256(0),             mplSupply - mplIn,    uint256(0),       mplIn],
+            xmpls:    [uint256(0),       uint256(0),        uint256(0),             xmplIn,               uint256(0),       uint256(0)],
+            syrups:   [uint256(0),       syrupSupply,       uint256(0),             uint256(0),           uint256(0),       uint256(0)],
+            stsyrups: [uint256(0),       uint256(0),        uint256(0),             uint256(0),           uint256(0),       uint256(0)]
+        });
+
+        vm.expectEmit();
+        emit Migrated(sender.addr, address(xmpl), xmplIn, receiver.addr, address(syrup), syrupOut);
+
+        vm.prank(sender.addr);
+        uint256 amount = actions.redeemAndMigrateWithPermit(receiver.addr, xmplIn, block.timestamp, v, r, s);
+
+        uint256 mplDiff   = mplSupply - mplIn;
+        uint256 syrupDiff = syrupSupply - syrupOut;
+
+        assertEq(amount, stsyrupOut);
+        assertBalances({
+            accounts: [address(actions), address(migrator), address(receiver.addr), address(sender.addr), address(stsyrup), address(xmpl)],
+            mpls:     [uint256(0),       mplIn,             uint256(0),             mplDiff,              uint256(0),       uint256(0)],
+            xmpls:    [uint256(0),       uint256(0),        uint256(0),             uint256(0),           uint256(0),       uint256(0)],
+            syrups:   [uint256(0),       syrupDiff,         syrupOut,               uint256(0),           uint256(0),       uint256(0)],
+            stsyrups: [uint256(0),       uint256(0),        uint256(0),             uint256(0),           uint256(0),       uint256(0)]
+        });
+    }
 
 }
 
