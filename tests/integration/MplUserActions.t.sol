@@ -129,9 +129,163 @@ contract MplUserActionsTestBase is Test {
 
 contract MigrateAndStakeTests is MplUserActionsTestBase {
 
+    function test_integration_migrateAndStake_zeroAmount() external {
+        vm.prank(sender.addr);
+        vm.expectRevert("MUA:MAS:ZERO_AMOUNT");
+        actions.migrateAndStake(receiver.addr, 0);
+    }
+
+    function test_integration_migrateAndStake_insufficientApproval() external {
+        vm.prank(sender.addr);
+        mpl.approve(address(actions), mplIn - 1);
+
+        vm.prank(sender.addr);
+        vm.expectRevert("MUA:MAS:TRANSFER_FAIL");
+        actions.migrateAndStake(receiver.addr, mplIn);
+    }
+
+    function test_integration_migrateAndStake_insufficientBalance() external {
+        vm.prank(sender.addr);
+        mpl.approve(address(actions), mplSupply + 1);
+
+        vm.prank(sender.addr);
+        vm.expectRevert("MUA:MAS:TRANSFER_FAIL");
+        actions.migrateAndStake(receiver.addr, mplSupply + 1);
+    }
+
+    function test_integration_migrateAndStake_migratorInactive() external {
+        vm.prank(sender.addr);
+        mpl.approve(address(actions), mplIn);
+
+        vm.prank(sender.addr);
+        vm.expectRevert("M:M:INACTIVE");
+        actions.migrateAndStake(receiver.addr, mplIn);
+    }
+
+    function test_integration_migrateAndStake_success() external {
+        vm.prank(governor.addr);
+        migrator.setActive(true);
+
+        vm.prank(sender.addr);
+        mpl.approve(address(actions), mplIn);
+
+        assertBalances({
+            accounts: [address(actions), address(migrator), address(receiver.addr), address(sender.addr), address(stsyrup), address(xmpl)],
+            mpls:     [uint256(0),       uint256(0),        uint256(0),             mplSupply,            uint256(0),       uint256(0)],
+            xmpls:    [uint256(0),       uint256(0),        uint256(0),             uint256(0),           uint256(0),       uint256(0)],
+            syrups:   [uint256(0),       syrupSupply,       uint256(0),             uint256(0),           uint256(0),       uint256(0)],
+            stsyrups: [uint256(0),       uint256(0),        uint256(0),             uint256(0),           uint256(0),       uint256(0)]
+        });
+
+        vm.expectEmit();
+        emit Migrated(sender.addr, address(mpl), mplIn, receiver.addr, address(stsyrup), stsyrupOut);
+
+        vm.prank(sender.addr);
+        uint256 amount = actions.migrateAndStake(receiver.addr, mplIn);
+
+        uint256 syrupDiff = syrupSupply - syrupOut;
+        uint256 mplDiff   = mplSupply - mplIn;
+
+        assertEq(amount, stsyrupOut);
+        assertBalances({
+            accounts: [address(actions), address(migrator), address(receiver.addr), address(sender.addr), address(stsyrup), address(xmpl)],
+            mpls:     [uint256(0),       mplIn,             uint256(0),             mplDiff,              uint256(0),       uint256(0)],
+            xmpls:    [uint256(0),       uint256(0),        uint256(0),             uint256(0),           uint256(0),       uint256(0)],
+            syrups:   [uint256(0),       syrupDiff,         uint256(0),             uint256(0),           syrupOut,         uint256(0)],
+            stsyrups: [uint256(0),       uint256(0),        stsyrupOut,             uint256(0),           uint256(0),       uint256(0)]
+        });
+    }
+
 }
 
 contract MigrateAndStakeWithPermitTests is MplUserActionsTestBase {
+
+    function test_integration_migrateAndStakeWithPermit_expiredDeadline() external {
+        ( uint8 v, bytes32 r, bytes32 s ) = signPermit(address(mpl), sender, address(actions), mplIn, 0, block.timestamp);
+
+        vm.warp(block.timestamp + 1 seconds);
+        vm.prank(sender.addr);
+        vm.expectRevert("MapleToken:EXPIRED");
+        actions.migrateAndStakeWithPermit(receiver.addr, mplIn, block.timestamp - 1 seconds, v, r, s);
+    }
+
+    function test_integration_migrateAndStakeWithPermit_malleable() external {
+        ( uint8 v, bytes32 r, bytes32 s ) = signPermit(address(mpl), sender, address(actions), mplIn, 0, block.timestamp);
+
+        v *= 2;
+
+        // NOTE: `MapleToken` has no explicit `MALLEABLE` revert.
+        vm.prank(sender.addr);
+        vm.expectRevert("MapleToken:INVALID_SIGNATURE");
+        actions.migrateAndStakeWithPermit(receiver.addr, mplIn, block.timestamp, v, r, s);
+    }
+
+    function test_integration_migrateAndStakeWithPermit_invalidSignature() external {
+        ( uint8 v, bytes32 r, bytes32 s ) = signPermit(address(mpl), sender, address(actions), mplIn, 0, block.timestamp);
+
+        s <<= 1;
+
+        vm.prank(sender.addr);
+        vm.expectRevert("MapleToken:INVALID_SIGNATURE");
+        actions.migrateAndStakeWithPermit(receiver.addr, mplIn, block.timestamp, v, r, s);
+    }
+
+    function test_integration_migrateAndStakeWithPermit_zeroAmount() external {
+        ( uint8 v, bytes32 r, bytes32 s ) = signPermit(address(mpl), sender, address(actions), 0, 0, block.timestamp);
+
+        vm.prank(sender.addr);
+        vm.expectRevert("MUA:MAS:ZERO_AMOUNT");
+        actions.migrateAndStakeWithPermit(receiver.addr, 0, block.timestamp, v, r, s);
+    }
+
+    function test_integration_migrateAndStakeWithPermit_insufficientBalance() external {
+        ( uint8 v, bytes32 r, bytes32 s ) = signPermit(address(mpl), sender, address(actions), mplSupply + 1, 0, block.timestamp);
+
+        vm.prank(sender.addr);
+        vm.expectRevert("MUA:MAS:TRANSFER_FAIL");
+        actions.migrateAndStakeWithPermit(receiver.addr, mplSupply + 1, block.timestamp, v, r, s);
+    }
+
+    function test_integration_migrateAndStakeWithPermit_migratorInactive() external {
+        ( uint8 v, bytes32 r, bytes32 s ) = signPermit(address(mpl), sender, address(actions), mplIn, 0, block.timestamp);
+
+        vm.prank(sender.addr);
+        vm.expectRevert("M:M:INACTIVE");
+        actions.migrateAndStakeWithPermit(receiver.addr, mplIn, block.timestamp, v, r, s);
+    }
+
+    function test_integration_migrateAndStakeWithPermit_success() external {
+        vm.prank(governor.addr);
+        migrator.setActive(true);
+
+        ( uint8 v, bytes32 r, bytes32 s ) = signPermit(address(mpl), sender, address(actions), mplIn, 0, block.timestamp);
+
+        assertBalances({
+            accounts: [address(actions), address(migrator), address(receiver.addr), address(sender.addr), address(stsyrup), address(xmpl)],
+            mpls:     [uint256(0),       uint256(0),        uint256(0),             mplSupply,            uint256(0),       uint256(0)],
+            xmpls:    [uint256(0),       uint256(0),        uint256(0),             uint256(0),           uint256(0),       uint256(0)],
+            syrups:   [uint256(0),       syrupSupply,       uint256(0),             uint256(0),           uint256(0),       uint256(0)],
+            stsyrups: [uint256(0),       uint256(0),        uint256(0),             uint256(0),           uint256(0),       uint256(0)]
+        });
+
+        vm.expectEmit();
+        emit Migrated(sender.addr, address(mpl), mplIn, receiver.addr, address(stsyrup), stsyrupOut);
+
+        vm.prank(sender.addr);
+        uint256 amount = actions.migrateAndStakeWithPermit(receiver.addr, mplIn, block.timestamp, v, r, s);
+
+        uint256 syrupDiff = syrupSupply - syrupOut;
+        uint256 mplDiff   = mplSupply - mplIn;
+
+        assertEq(amount, stsyrupOut);
+        assertBalances({
+            accounts: [address(actions), address(migrator), address(receiver.addr), address(sender.addr), address(stsyrup), address(xmpl)],
+            mpls:     [uint256(0),       mplIn,             uint256(0),             mplDiff,              uint256(0),       uint256(0)],
+            xmpls:    [uint256(0),       uint256(0),        uint256(0),             uint256(0),           uint256(0),       uint256(0)],
+            syrups:   [uint256(0),       syrupDiff,         uint256(0),             uint256(0),           syrupOut,         uint256(0)],
+            stsyrups: [uint256(0),       uint256(0),        stsyrupOut,             uint256(0),           uint256(0),       uint256(0)]
+        });
+    }
 
 }
 
