@@ -17,7 +17,25 @@ import { MplUserActions } from "../../contracts/MplUserActions.sol";
 
 contract MplUserActionsTestBase is Test {
 
-    event Migrated(
+    event MigratedAndStaked(
+        address indexed sender,
+        address assetSent,
+        uint256 amountSent,
+        address indexed receiver,
+        address assetReceived,
+        uint256 amountReceived
+    );
+
+    event RedeemedAndMigrated(
+        address indexed sender,
+        address assetSent,
+        uint256 amountSent,
+        address indexed receiver,
+        address assetReceived,
+        uint256 amountReceived
+    );
+
+    event RedeemedAndMigratedAndStaked(
         address indexed sender,
         address assetSent,
         uint256 amountSent,
@@ -178,7 +196,7 @@ contract MigrateAndStakeTests is MplUserActionsTestBase {
         });
 
         vm.expectEmit();
-        emit Migrated(sender.addr, address(mpl), mplIn, receiver.addr, address(stsyrup), stsyrupOut);
+        emit MigratedAndStaked(sender.addr, address(mpl), mplIn, receiver.addr, address(stsyrup), stsyrupOut);
 
         vm.prank(sender.addr);
         uint256 amount = actions.migrateAndStake(receiver.addr, mplIn);
@@ -269,7 +287,7 @@ contract MigrateAndStakeWithPermitTests is MplUserActionsTestBase {
         });
 
         vm.expectEmit();
-        emit Migrated(sender.addr, address(mpl), mplIn, receiver.addr, address(stsyrup), stsyrupOut);
+        emit MigratedAndStaked(sender.addr, address(mpl), mplIn, receiver.addr, address(stsyrup), stsyrupOut);
 
         vm.prank(sender.addr);
         uint256 amount = actions.migrateAndStakeWithPermit(receiver.addr, mplIn, block.timestamp, v, r, s);
@@ -364,7 +382,7 @@ contract RedeemAndMigrateTests is MplUserActionsTestBase {
         });
 
         vm.expectEmit();
-        emit Migrated(sender.addr, address(xmpl), xmplIn, receiver.addr, address(syrup), syrupOut);
+        emit RedeemedAndMigrated(sender.addr, address(xmpl), xmplIn, receiver.addr, address(syrup), syrupOut);
 
         vm.prank(sender.addr);
         uint256 amount = actions.redeemAndMigrate(receiver.addr, xmplIn);
@@ -472,7 +490,7 @@ contract RedeemAndMigrateWithPermitTests is MplUserActionsTestBase {
         });
 
         vm.expectEmit();
-        emit Migrated(sender.addr, address(xmpl), xmplIn, receiver.addr, address(syrup), syrupOut);
+        emit RedeemedAndMigrated(sender.addr, address(xmpl), xmplIn, receiver.addr, address(syrup), syrupOut);
 
         vm.prank(sender.addr);
         uint256 amount = actions.redeemAndMigrateWithPermit(receiver.addr, xmplIn, block.timestamp, v, r, s);
@@ -567,7 +585,7 @@ contract RedeemAndMigrateAndStakeTests is MplUserActionsTestBase {
         });
 
         vm.expectEmit();
-        emit Migrated(sender.addr, address(xmpl), xmplIn, receiver.addr, address(stsyrup), stsyrupOut);
+        emit RedeemedAndMigratedAndStaked(sender.addr, address(xmpl), xmplIn, receiver.addr, address(stsyrup), stsyrupOut);
 
         vm.prank(sender.addr);
         uint256 amount = actions.redeemAndMigrateAndStake(receiver.addr, xmplIn);
@@ -675,7 +693,7 @@ contract RedeemAndMigrateAndStakeWithPermitTests is MplUserActionsTestBase {
         });
 
         vm.expectEmit();
-        emit Migrated(sender.addr, address(xmpl), xmplIn, receiver.addr, address(stsyrup), stsyrupOut);
+        emit RedeemedAndMigratedAndStaked(sender.addr, address(xmpl), xmplIn, receiver.addr, address(stsyrup), stsyrupOut);
 
         vm.prank(sender.addr);
         uint256 amount = actions.redeemAndMigrateAndStakeWithPermit(receiver.addr, xmplIn, block.timestamp, v, r, s);

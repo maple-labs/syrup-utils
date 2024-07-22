@@ -7,7 +7,25 @@ interface IMplUserActions {
     /*** Events                                                                                                                         ***/
     /**************************************************************************************************************************************/
 
-    event Migrated(
+    event MigratedAndStaked(
+        address indexed sender,
+        address assetSent,
+        uint256 amountSent,
+        address indexed receiver,
+        address assetReceived,
+        uint256 amountReceived
+    );
+
+    event RedeemedAndMigrated(
+        address indexed sender,
+        address assetSent,
+        uint256 amountSent,
+        address indexed receiver,
+        address assetReceived,
+        uint256 amountReceived
+    );
+
+    event RedeemedAndMigratedAndStaked(
         address indexed sender,
         address assetSent,
         uint256 amountSent,

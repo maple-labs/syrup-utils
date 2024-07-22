@@ -116,7 +116,7 @@ contract MplUserActions is IMplUserActions {
         uint256 syrupAmount_ = _migrate(address(this), mplIn_);
         stsyrupOut_          = _stake(receiver_, syrupAmount_);
 
-        emit Migrated(msg.sender, mpl, mplIn_, receiver_, stsyrup, stsyrupOut_);
+        emit MigratedAndStaked(msg.sender, mpl, mplIn_, receiver_, stsyrup, stsyrupOut_);
     }
 
     // MPL -> SYRUP
@@ -145,7 +145,7 @@ contract MplUserActions is IMplUserActions {
         uint256 mplAmount_ = _redeem(address(this), xmplIn_);
         syrupOut_          = _migrate(receiver_, mplAmount_);
 
-        emit Migrated(msg.sender, xmpl, xmplIn_, receiver_, syrup, syrupOut_);
+        emit RedeemedAndMigrated(msg.sender, xmpl, xmplIn_, receiver_, syrup, syrupOut_);
     }
 
     // xMPL -> MPL -> SYRUP -> stSYRUP
@@ -157,7 +157,7 @@ contract MplUserActions is IMplUserActions {
         uint256 syrupAmount_ = _migrate(address(this), mplAmount_);
         stsyrupOut_          = _stake(receiver_, syrupAmount_);
 
-        emit Migrated(msg.sender, xmpl, xmplIn_, receiver_, stsyrup, stsyrupOut_);
+        emit RedeemedAndMigratedAndStaked(msg.sender, xmpl, xmplIn_, receiver_, stsyrup, stsyrupOut_);
     }
 
     // SYRUP -> stSYRUP

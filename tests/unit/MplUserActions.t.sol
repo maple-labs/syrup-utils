@@ -9,7 +9,25 @@ import { MockERC20, MockMigrator, MockRDT } from "../utils/Mocks.sol";
 
 contract MplUserActionsTestBase is Test {
 
-    event Migrated(
+    event MigratedAndStaked(
+        address indexed sender,
+        address assetSent,
+        uint256 amountSent,
+        address indexed receiver,
+        address assetReceived,
+        uint256 amountReceived
+    );
+
+    event RedeemedAndMigrated(
+        address indexed sender,
+        address assetSent,
+        uint256 amountSent,
+        address indexed receiver,
+        address assetReceived,
+        uint256 amountReceived
+    );
+
+    event RedeemedAndMigratedAndStaked(
         address indexed sender,
         address assetSent,
         uint256 amountSent,
@@ -151,7 +169,7 @@ contract MplUserActionsMigrateAndStakeTests is MplUserActionsTestBase {
         mpl.approve(address(actions), mplIn);
 
         vm.expectEmit();
-        emit Migrated(sender.addr, address(mpl), mplIn, receiver.addr, address(stsyrup), stsyrupOut);
+        emit MigratedAndStaked(sender.addr, address(mpl), mplIn, receiver.addr, address(stsyrup), stsyrupOut);
 
         assertBalances({
             accounts: [address(actions), address(migrator), address(receiver.addr), address(sender.addr), address(stsyrup), address(xmpl)],
@@ -182,7 +200,7 @@ contract MplUserActionsMigrateAndStakeTests is MplUserActionsTestBase {
         mpl.approve(address(actions), mplIn);
 
         vm.expectEmit();
-        emit Migrated(receiver.addr, address(mpl), mplIn, receiver.addr, address(stsyrup), stsyrupOut);
+        emit MigratedAndStaked(receiver.addr, address(mpl), mplIn, receiver.addr, address(stsyrup), stsyrupOut);
 
         assertBalances({
             accounts: [address(actions), address(migrator), address(receiver.addr), address(sender.addr), address(stsyrup), address(xmpl)],
@@ -270,7 +288,7 @@ contract MplUserActionsMigrateAndStakeWithPermitTests is MplUserActionsTestBase 
         ( uint8 v, bytes32 r, bytes32 s ) = signPermit(address(mpl), sender, address(actions), mplIn, 0, block.timestamp);
 
         vm.expectEmit();
-        emit Migrated(sender.addr, address(mpl), mplIn, receiver.addr, address(stsyrup), stsyrupOut);
+        emit MigratedAndStaked(sender.addr, address(mpl), mplIn, receiver.addr, address(stsyrup), stsyrupOut);
 
         assertBalances({
             accounts: [address(actions), address(migrator), address(receiver.addr), address(sender.addr), address(stsyrup), address(xmpl)],
@@ -335,7 +353,7 @@ contract MplUserActionsRedeemAndMigrateTests is MplUserActionsTestBase {
         xmpl.approve(address(actions), xmplIn);
 
         vm.expectEmit();
-        emit Migrated(sender.addr, address(xmpl), xmplIn, receiver.addr, address(syrup), syrupOut);
+        emit RedeemedAndMigrated(sender.addr, address(xmpl), xmplIn, receiver.addr, address(syrup), syrupOut);
 
         assertBalances({
             accounts: [address(actions), address(migrator), address(receiver.addr), address(sender.addr), address(stsyrup), address(xmpl)],
@@ -366,7 +384,7 @@ contract MplUserActionsRedeemAndMigrateTests is MplUserActionsTestBase {
         xmpl.approve(address(actions), xmplIn);
 
         vm.expectEmit();
-        emit Migrated(receiver.addr, address(xmpl), xmplIn, receiver.addr, address(syrup), syrupOut);
+        emit RedeemedAndMigrated(receiver.addr, address(xmpl), xmplIn, receiver.addr, address(syrup), syrupOut);
 
         assertBalances({
             accounts: [address(actions), address(migrator), address(receiver.addr), address(sender.addr), address(stsyrup), address(xmpl)],
@@ -455,7 +473,7 @@ contract MplUserActionsRedeemAndMigrateWithPermitTests is MplUserActionsTestBase
         ( uint8 v, bytes32 r, bytes32 s ) = signPermit(address(xmpl), sender, address(actions), xmplIn, 0, block.timestamp);
 
         vm.expectEmit();
-        emit Migrated(sender.addr, address(xmpl), xmplIn, receiver.addr, address(syrup), syrupOut);
+        emit RedeemedAndMigrated(sender.addr, address(xmpl), xmplIn, receiver.addr, address(syrup), syrupOut);
 
         assertBalances({
             accounts: [address(actions), address(migrator), address(receiver.addr), address(sender.addr), address(stsyrup), address(xmpl)],
@@ -520,7 +538,7 @@ contract MplUserActionsRedeemAndMigrateAndStakeTests is MplUserActionsTestBase {
         xmpl.approve(address(actions), xmplIn);
 
         vm.expectEmit();
-        emit Migrated(sender.addr, address(xmpl), xmplIn, receiver.addr, address(stsyrup), stsyrupOut);
+        emit RedeemedAndMigratedAndStaked(sender.addr, address(xmpl), xmplIn, receiver.addr, address(stsyrup), stsyrupOut);
 
         assertBalances({
             accounts: [address(actions), address(migrator), address(receiver.addr), address(sender.addr), address(stsyrup), address(xmpl)],
@@ -551,7 +569,7 @@ contract MplUserActionsRedeemAndMigrateAndStakeTests is MplUserActionsTestBase {
         xmpl.approve(address(actions), xmplIn);
 
         vm.expectEmit();
-        emit Migrated(receiver.addr, address(xmpl), xmplIn, receiver.addr, address(stsyrup), stsyrupOut);
+        emit RedeemedAndMigratedAndStaked(receiver.addr, address(xmpl), xmplIn, receiver.addr, address(stsyrup), stsyrupOut);
 
         assertBalances({
             accounts: [address(actions), address(migrator), address(receiver.addr), address(sender.addr), address(stsyrup), address(xmpl)],
@@ -640,7 +658,7 @@ contract MplUserActionsRedeemAndMigrateAndStakeWithPermitTests is MplUserActions
         ( uint8 v, bytes32 r, bytes32 s ) = signPermit(address(xmpl), sender, address(actions), xmplIn, 0, block.timestamp);
 
         vm.expectEmit();
-        emit Migrated(sender.addr, address(xmpl), xmplIn, receiver.addr, address(stsyrup), stsyrupOut);
+        emit RedeemedAndMigratedAndStaked(sender.addr, address(xmpl), xmplIn, receiver.addr, address(stsyrup), stsyrupOut);
 
         assertBalances({
             accounts: [address(actions), address(migrator), address(receiver.addr), address(sender.addr), address(stsyrup), address(xmpl)],
