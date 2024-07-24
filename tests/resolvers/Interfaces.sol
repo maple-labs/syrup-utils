@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.20;
 
+interface IGlobalsLike {
+
+    function setOperationalAdmin(address operationalAdmin) external;
+
+}
+
 interface IMigratorLike {
 
     function setActive(bool active_) external;

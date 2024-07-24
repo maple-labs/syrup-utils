@@ -5,7 +5,7 @@ import { console2 as console, Test, Vm } from "../../modules/forge-std/src/Test.
 
 import { IERC20 } from "../../modules/erc20/contracts/interfaces/IERC20.sol";
 
-import { IMigratorLike, IRdtLike } from "../resolvers/Interfaces.sol";
+import { IGlobalsLike, IMigratorLike, IRdtLike } from "../resolvers/Interfaces.sol";
 
 contract TestBase is Test {
 
@@ -14,9 +14,10 @@ contract TestBase is Test {
 
     address globals;
 
-    Vm.Wallet governor = vm.createWallet("governor");
-    Vm.Wallet receiver = vm.createWallet("receiver");
-    Vm.Wallet sender   = vm.createWallet("sender");
+    Vm.Wallet governor         = vm.createWallet("governor");
+    Vm.Wallet operationalAdmin = vm.createWallet("operationalAdmin");
+    Vm.Wallet receiver         = vm.createWallet("receiver");
+    Vm.Wallet sender           = vm.createWallet("sender");
 
     IERC20        mpl;
     IERC20        syrup;
@@ -30,6 +31,9 @@ contract TestBase is Test {
         mpl = IERC20(deployCode("./out/MapleToken.sol/MapleToken.json", abi.encode("Maple Token", "MPL", address(1))));
 
         globals = deployGlobals(governor.addr);
+
+        vm.prank(governor.addr);
+        IGlobalsLike(globals).setOperationalAdmin(operationalAdmin.addr);
 
         // NOTE: Would be replaced with precomputed address of the migrator.
         migrator = IMigratorLike(address(0x1337));
