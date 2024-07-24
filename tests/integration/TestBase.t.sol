@@ -39,7 +39,7 @@ contract TestBase is Test {
         migrator = IMigratorLike(address(0x1337));
 
         // NOTE: There are two contracts named `MapleToken`, one of them is in the root and the other is in the `contracts` directory.
-        syrup = IERC20(deployToken(globals, address(migrator)));
+        syrup = IERC20(deploySyrup(globals, address(migrator)));
 
         stsyrup = IRdtLike(deployRdt(governor.addr, address(syrup), precision));
         xmpl    = IRdtLike(deployRdt(governor.addr, address(mpl), precision));
@@ -66,6 +66,11 @@ contract TestBase is Test {
         }
     }
 
+    function burnSyrup(address from, uint256 amount) internal {
+        vm.prank(from);
+        syrup.transfer(address(0), amount);
+    }
+
     function deployGlobals(address governor_) internal returns (address globals_) {
         address implementation = deployCode("./out/MapleGlobals.sol/MapleGlobals.json");
 
@@ -84,13 +89,18 @@ contract TestBase is Test {
         );
     }
 
-    function deployToken(address globals_, address migrator_) internal returns (address token) {
+    function deploySyrup(address globals_, address migrator_) internal returns (address token) {
         token = deployCode("./out/MapleTokenProxy.sol/MapleTokenProxy.json", abi.encode(
                 globals_,
                 deployCode("./out/contracts/MapleToken.sol/MapleToken.json"),
                 deployCode("./out/MapleTokenInitializer.sol/MapleTokenInitializer.json"),
                 migrator_
             ));
+    }
+
+    function mintSyrup(address to, uint256 amount) internal {
+        vm.prank(address(migrator));
+        syrup.transfer(to, amount);
     }
 
     function signPermit(

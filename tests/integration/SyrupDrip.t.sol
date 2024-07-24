@@ -5,10 +5,12 @@ import { console2 as console, Test, Vm } from "../../modules/forge-std/src/Test.
 
 import { SyrupDrip } from "../../contracts/SyrupDrip.sol";
 
+import { MerkleBase } from "../utils/MerkleBase.sol";
+
 import { TestBase } from "./TestBase.t.sol";
 
 contract SyrupDripTestBase is TestBase {
-    
+
     event Allocated(bytes32 indexed root, uint256 deadline, uint256 maxId);
     event Claimed(uint256 indexed id, address indexed account, uint256 amount);
     event Reclaimed(address indexed account, uint256 amount);
@@ -16,9 +18,9 @@ contract SyrupDripTestBase is TestBase {
 
     SyrupDrip drip;
 
-    function setUp() public override {
+    function setUp() public virtual override {
         super.setUp();
-        
+
         drip = new SyrupDrip(address(syrup), address(globals), address(stsyrup));
     }
 
@@ -80,6 +82,269 @@ contract AllocateIntegrationTests is SyrupDripTestBase {
         assertEq(drip.root(),     root);
         assertEq(drip.deadline(), deadline);
         assertEq(drip.maxId(),    maxId);
+    }
+
+}
+
+contract ClaimIntegrationTests is SyrupDripTestBase, MerkleBase {
+
+    uint256 funding = 30e18;
+
+    function setUp() public override {
+        super.setUp();
+
+        setUpProofs();
+
+        mintSyrup(address(drip), funding);
+
+        vm.prank(operationalAdmin.addr);
+        drip.allocate(root, deadline, maxId);
+    }
+
+    function test_claim_alreadyClaimed() external {
+        drip.claim(id_habibi, address_habibi, amount_habibi, proof_habibi);
+
+        vm.expectRevert("SD:C:ALREADY_CLAIMED");
+        drip.claim(id_habibi, address_habibi, amount_habibi, proof_habibi);
+    }
+
+    function test_claim_expiredDeadline() external {
+        vm.warp(deadline + 1 seconds);
+        vm.expectRevert("SD:C:EXPIRED_DEADLINE");
+        drip.claim(id_habibi, address_habibi, amount_habibi, proof_habibi);
+    }
+
+    function test_claim_invalidProof_id() external {
+        vm.expectRevert("SD:C:INVALID_PROOF");
+        drip.claim(id_habibi + 1, address_habibi, amount_habibi, proof_habibi);
+    }
+
+    function test_claim_invalidProof_account() external {
+        vm.expectRevert("SD:C:INVALID_PROOF");
+        drip.claim(id_habibi, address_chad, amount_habibi, proof_habibi);
+    }
+
+    function test_claim_invalidProof_amount() external {
+        vm.expectRevert("SD:C:INVALID_PROOF");
+        drip.claim(id_habibi, address_habibi, amount_habibi + 1, proof_habibi);
+    }
+
+    function test_claim_invalidProof_proof() external {
+        proof_habibi[1] = bytes32(uint256(proof_habibi[1]) - 1);
+
+        vm.expectRevert("SD:C:INVALID_PROOF");
+        drip.claim(id_habibi, address_habibi, amount_habibi, proof_habibi);
+    }
+
+    function test_claim_transferFail() external {
+        burnSyrup(address(drip), funding);
+
+        vm.expectRevert("SD:C:TRANSFER_FAIL");
+        drip.claim(id_habibi, address_habibi, amount_habibi, proof_habibi);
+    }
+
+    function test_claim_success_singleClaim() external {
+        assertEq(syrup.balanceOf(address(drip)),           funding);
+        assertEq(syrup.balanceOf(address(address_habibi)), 0);
+
+        assertEq(drip.bitmaps(0), 0);
+        assertEq(drip.bitmaps(1), 0);
+
+        vm.expectEmit();
+        emit Claimed(id_habibi, address_habibi, amount_habibi);
+
+        drip.claim(id_habibi, address_habibi, amount_habibi, proof_habibi);
+
+        assertEq(syrup.balanceOf(address(drip)),           funding - amount_habibi);
+        assertEq(syrup.balanceOf(address(address_habibi)), amount_habibi);
+
+        assertEq(drip.bitmaps(0), 2 ** id_habibi);
+        assertEq(drip.bitmaps(1), 0);
+    }
+
+    function test_claim_success_multipleClaims() external {
+        assertEq(syrup.balanceOf(address(drip)),           funding);
+        assertEq(syrup.balanceOf(address(address_chad)),   0);
+        assertEq(syrup.balanceOf(address(address_habibi)), 0);
+
+        assertEq(drip.bitmaps(0), 0);
+        assertEq(drip.bitmaps(1), 0);
+
+        vm.expectEmit();
+        emit Claimed(id_chad, address_chad, amount_chad);
+
+        drip.claim(id_chad, address_chad, amount_chad, proof_chad);
+
+        assertEq(syrup.balanceOf(address(drip)),           funding - amount_chad);
+        assertEq(syrup.balanceOf(address(address_chad)),   amount_chad);
+        assertEq(syrup.balanceOf(address(address_habibi)), 0);
+
+        assertEq(drip.bitmaps(0), 2 ** id_chad);
+        assertEq(drip.bitmaps(1), 0);
+
+        vm.expectEmit();
+        emit Claimed(id_habibi, address_habibi, amount_habibi);
+
+        drip.claim(id_habibi, address_habibi, amount_habibi, proof_habibi);
+
+        assertEq(syrup.balanceOf(address(drip)),           funding - amount_chad - amount_habibi);
+        assertEq(syrup.balanceOf(address(address_chad)),   amount_chad);
+        assertEq(syrup.balanceOf(address(address_habibi)), amount_habibi);
+
+        assertEq(drip.bitmaps(0), 2 ** id_chad + 2 ** id_habibi);
+        assertEq(drip.bitmaps(1), 0);
+    }
+
+    function test_claim_success_multipleSlots() external {
+        assertEq(syrup.balanceOf(address(drip)),          funding);
+        assertEq(syrup.balanceOf(address(address_chad)),  0);
+        assertEq(syrup.balanceOf(address(address_degen)), 0);
+
+        assertEq(drip.bitmaps(0), 0);
+        assertEq(drip.bitmaps(1), 0);
+
+        vm.expectEmit();
+        emit Claimed(id_chad, address_chad, amount_chad);
+
+        drip.claim(id_chad, address_chad, amount_chad, proof_chad);
+
+        assertEq(syrup.balanceOf(address(drip)),          funding - amount_chad);
+        assertEq(syrup.balanceOf(address(address_chad)),  amount_chad);
+        assertEq(syrup.balanceOf(address(address_degen)), 0);
+
+        assertEq(drip.bitmaps(0), 2 ** id_chad);
+        assertEq(drip.bitmaps(1), 0);
+
+        vm.expectEmit();
+        emit Claimed(id_degen, address_degen, amount_degen);
+
+        drip.claim(id_degen, address_degen, amount_degen, proof_degen);
+
+        assertEq(syrup.balanceOf(address(drip)),          funding - amount_chad - amount_degen);
+        assertEq(syrup.balanceOf(address(address_chad)),  amount_chad);
+        assertEq(syrup.balanceOf(address(address_degen)), amount_degen);
+
+        assertEq(drip.bitmaps(0), 2 ** id_chad);
+        assertEq(drip.bitmaps(1), 0);
+        assertEq(drip.bitmaps(2), 0);
+        assertEq(drip.bitmaps(3), 0);
+        assertEq(drip.bitmaps(4), 0);
+        assertEq(drip.bitmaps(5), 2 ** (id_degen % 256));
+    }
+
+    function test_claim_success_multipleInstances() external {
+        assertEq(syrup.balanceOf(address(drip)),         funding);
+        assertEq(syrup.balanceOf(address(address_chad)), 0);
+
+        assertEq(drip.bitmaps(0), 0);
+        assertEq(drip.bitmaps(1), 0);
+
+        vm.expectEmit();
+        emit Claimed(id_chad, address_chad, amount_chad);
+
+        drip.claim(id_chad, address_chad, amount_chad, proof_chad);
+
+        assertEq(syrup.balanceOf(address(drip)),         funding - amount_chad);
+        assertEq(syrup.balanceOf(address(address_chad)), amount_chad);
+
+        assertEq(drip.bitmaps(0), 2 ** id_chad);
+        assertEq(drip.bitmaps(1), 0);
+
+        vm.expectEmit();
+        emit Claimed(id_chad2, address_chad2, amount_chad2);
+
+        drip.claim(id_chad2, address_chad2, amount_chad2, proof_chad2);
+
+        assertEq(syrup.balanceOf(address(drip)),         funding - amount_chad - amount_chad2);
+        assertEq(syrup.balanceOf(address(address_chad)), amount_chad + amount_chad2);
+
+        assertEq(drip.bitmaps(0), 2 ** id_chad + 2 ** id_chad2);
+        assertEq(drip.bitmaps(1), 0);
+    }
+
+    function test_claim_success_zeroAmount() external {
+        assertEq(syrup.balanceOf(address(drip)),         funding);
+        assertEq(syrup.balanceOf(address(address_zero)), 0);
+
+        assertEq(drip.bitmaps(0), 0);
+        assertEq(drip.bitmaps(1), 0);
+
+        vm.expectEmit();
+        emit Claimed(id_zero, address_zero, amount_zero);
+
+        drip.claim(id_zero, address_zero, amount_zero, proof_zero);
+
+        assertEq(syrup.balanceOf(address(drip)),         funding);
+        assertEq(syrup.balanceOf(address(address_zero)), 0);
+
+        assertEq(drip.bitmaps(0), 2 ** id_zero);
+        assertEq(drip.bitmaps(1), 0);
+    }
+
+    function test_claim_success_duplicateId() external {
+        assertEq(syrup.balanceOf(address(drip)),           funding);
+        assertEq(syrup.balanceOf(address(address_habibi)), 0);
+
+        assertEq(drip.bitmaps(0), 0);
+        assertEq(drip.bitmaps(1), 0);
+
+        vm.expectEmit();
+        emit Claimed(id_habibi, address_habibi, amount_habibi);
+
+        drip.claim(id_habibi, address_habibi, amount_habibi, proof_habibi);
+
+        assertEq(syrup.balanceOf(address(drip)),           funding - amount_habibi);
+        assertEq(syrup.balanceOf(address(address_habibi)), amount_habibi);
+
+        assertEq(drip.bitmaps(0), 2 ** id_habibi);
+        assertEq(drip.bitmaps(1), 0);
+
+        vm.expectRevert("SD:C:ALREADY_CLAIMED");
+        drip.claim(id_duplicate, address_duplicate, amount_duplicate, proof_duplicate);
+
+        assertEq(id_habibi, id_duplicate);
+    }
+
+    function test_claim_success_updatedAllocation() external {
+        assertEq(syrup.balanceOf(address(drip)),           funding);
+        assertEq(syrup.balanceOf(address(address_habibi)), 0);
+        assertEq(syrup.balanceOf(address(address_next)),   0);
+
+        assertEq(drip.bitmaps(0), 0);
+        assertEq(drip.bitmaps(1), 0);
+
+        vm.expectEmit();
+        emit Claimed(id_habibi, address_habibi, amount_habibi);
+
+        drip.claim(id_habibi, address_habibi, amount_habibi, proof_habibi);
+
+        assertEq(syrup.balanceOf(address(drip)),           funding - amount_habibi);
+        assertEq(syrup.balanceOf(address(address_habibi)), amount_habibi);
+        assertEq(syrup.balanceOf(address(address_next)),   0);
+
+        assertEq(drip.bitmaps(0), 2 ** id_habibi);
+        assertEq(drip.bitmaps(1), 0);
+
+        // Update token allocations.
+        vm.prank(operationalAdmin.addr);
+        drip.allocate(root2, deadline, maxId);
+
+        // Fail to claim from the old allocations.
+        vm.expectRevert("SD:C:INVALID_PROOF");
+        drip.claim(id_degen, address_degen, amount_degen, proof_degen);
+
+        // Succeed claiming from the new allocations.
+        vm.expectEmit();
+        emit Claimed(id_next, address_next, amount_next);
+
+        drip.claim(id_next, address_next, amount_next, proof_next);
+
+        assertEq(syrup.balanceOf(address(drip)),           funding - amount_habibi - amount_next);
+        assertEq(syrup.balanceOf(address(address_habibi)), amount_habibi);
+        assertEq(syrup.balanceOf(address(address_next)),   amount_next);
+
+        assertEq(drip.bitmaps(0), 2 ** id_habibi + 2 ** id_next);
+        assertEq(drip.bitmaps(1), 0);
     }
 
 }
