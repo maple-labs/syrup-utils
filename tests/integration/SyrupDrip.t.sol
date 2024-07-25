@@ -646,5 +646,64 @@ contract ClaimAndStakeIntegrationTest is SyrupDripTestBase, MerkleBase {
         assertEq(drip.bitmaps(4), 0);
         assertEq(drip.bitmaps(5), 2 ** (id_degen % 256));
     }
-    
+
+}
+
+contract ReclaimIntegrationTest is SyrupDripTestBase {
+
+    address treasury = makeAddr("treasury");
+
+    uint256 balance = 5e18;
+
+    function setUp() public override {
+        super.setUp();
+
+        mintSyrup(address(drip), balance);
+    }
+
+    function test_reclaim_notAuthorized() external {
+        vm.expectRevert("SD:NOT_AUTHORIZED");
+        drip.reclaim(treasury, balance);
+    }
+
+    function test_reclaim_zeroAmount() external {
+        vm.prank(governor.addr);
+        vm.expectRevert("SD:R:ZERO_AMOUNT");
+        drip.reclaim(treasury, 0);
+    }
+
+    function test_reclaim_transferFail() external {
+        vm.prank(governor.addr);
+        vm.expectRevert("SD:R:TRANSFER_FAIL");
+        drip.reclaim(treasury, balance + 1);
+    }
+
+    function test_reclaim_success_governor() external {
+        vm.expectEmit();
+        emit Reclaimed(treasury, balance);
+
+        assertEq(syrup.balanceOf(address(drip)),     balance);
+        assertEq(syrup.balanceOf(address(treasury)), 0);
+
+        vm.prank(governor.addr);
+        drip.reclaim(treasury, balance);
+
+        assertEq(syrup.balanceOf(address(drip)),     0);
+        assertEq(syrup.balanceOf(address(treasury)), balance);
+    }
+
+    function test_reclaim_success_operationalAdmin() external {
+        vm.expectEmit();
+        emit Reclaimed(treasury, balance);
+
+        assertEq(syrup.balanceOf(address(drip)),     balance);
+        assertEq(syrup.balanceOf(address(treasury)), 0);
+
+        vm.prank(operationalAdmin.addr);
+        drip.reclaim(treasury, balance);
+
+        assertEq(syrup.balanceOf(address(drip)),     0);
+        assertEq(syrup.balanceOf(address(treasury)), balance);
+    }
+
 }
