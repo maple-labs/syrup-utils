@@ -122,7 +122,7 @@ contract SyrupDripAllocateTests is SyrupDripTestBase {
 
 contract SyrupDripClaimTests is SyrupDripTestBase, MerkleBase {
 
-    uint256 funding  = 30e18;
+    uint256 funding = 30e18;
 
     function setUp() public override {
         super.setUp();
