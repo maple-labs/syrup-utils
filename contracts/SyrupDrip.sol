@@ -127,7 +127,6 @@ contract SyrupDrip is ISyrupDrip {
         emit Claimed(id_, owner_, claimAmount_);
     }
 
-    // TODO: Consider where comments for internal functions should go
     // Checks if a token allocation has already been claimed.
     function _isClaimed(uint256 id_) internal view returns (bool isClaimed_) {
         uint256 key_  = id_ / 256;
