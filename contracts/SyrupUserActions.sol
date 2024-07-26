@@ -5,7 +5,7 @@ import { ERC20Helper } from "../modules/erc20-helper/src/ERC20Helper.sol";
 
 import { ISyrupUserActions } from "./interfaces/ISyrupUserActions.sol";
 
-import { IBalancerVaultLike, IERC20Like, IPSMLike, ISdaiLike } from "./interfaces/Interfaces.sol";
+import { IBalancerVaultLike, IERC20Like, IPSMLike, ISDaiLike } from "./interfaces/Interfaces.sol";
 
 contract SyrupUserActions is ISyrupUserActions {
 
@@ -28,7 +28,7 @@ contract SyrupUserActions is ISyrupUserActions {
         _locked = 1;
 
         require(ERC20Helper.approve(SYRUP_USDC, BAL_VAULT, type(uint256).max), "SUA:C:SYRUP_APPROVE_FAIL");
-        require(ERC20Helper.approve(DAI, PSM, type(uint256).max),              "SUA:C:DAI_APPROVE_FAIL");
+        require(ERC20Helper.approve(DAI,        PSM,       type(uint256).max), "SUA:C:DAI_APPROVE_FAIL");
     }
 
     modifier nonReentrant() {
@@ -123,7 +123,7 @@ contract SyrupUserActions is ISyrupUserActions {
     }
 
     function _redeemForDai(uint256 sdaiIn) internal returns (uint256 daiOut_) {
-        daiOut_ = ISdaiLike(SDAI).redeem(sdaiIn, address(this), address(this));
+        daiOut_ = ISDaiLike(SDAI).redeem(sdaiIn, address(this), address(this));
     }
 
     function _swapDaiForUsdc(uint256 daiIn_, address receiver_, uint256 minUsdcOut_) internal returns (uint256 usdcOut_) {

@@ -49,7 +49,14 @@ contract SyrupUserActionsTestBase is Test {
         IERC20Like(SYRUP_USDC).transfer(address(0), amount_);
     }
 
-    function _getPermitDigest(address asset_, address owner_, address spender_, uint256 value_, uint256 nonce_, uint256 deadline_)
+    function _getPermitDigest(
+        address asset_,
+        address owner_,
+        address spender_,
+        uint256 value_,
+        uint256 nonce_,
+        uint256 deadline_
+    )
         internal view returns (bytes32 digest_)
     {
         IERC20Like asset = IERC20Like(asset_);
@@ -296,7 +303,7 @@ contract SyrupUserActionsSwapToUsdcTests is SyrupUserActionsTestBase {
             asset_:    address(syrupUsdc),
             owner_:    depositor,
             spender_:  address(syrupUserActions),
-            value_:    syrupUsdcIn ,
+            value_:    syrupUsdcIn,
             nonce_:    0,
             deadline_: deadline
             })
@@ -353,9 +360,9 @@ contract SyrupUserActionsSwapToUsdcTests is SyrupUserActionsTestBase {
         _burnSyrupUsdc(account, syrupUsdcIn);
 
         // Increase this value once the balancer pool has more liquidity
-        syrupUsdcIn = bound(syrupUsdcIn_, 1e5, 400e6);
-        tout_       = bound(tout_, 0.002e18, 0.01e18);  // 0.01e18 = 1%
-        slippage_   = bound(slippage_, 0.002e18, 0.01e18);
+        syrupUsdcIn = bound(syrupUsdcIn_, 1e5,      400e6);
+        tout_       = bound(tout_,        0.002e18, 0.01e18);  // 0.01e18 = 1%
+        slippage_   = bound(slippage_,    0.002e18, 0.01e18);
 
         uint256 minUsdcOut = syrupUsdcIn * (1e18 - (slippage_ + tout_)) / 1e18;
 
@@ -391,7 +398,7 @@ contract SyrupUserActionsSwapToUsdcTests is SyrupUserActionsTestBase {
         address depositor  = accountWallet.addr;
         uint256 deadline   = block.timestamp;
 
-        syrupUsdcIn = bound(amountIn_, 2, 400e6);
+        syrupUsdcIn = bound(amountIn_, 2,  400e6);
         slippage_   = bound(slippage_, 20, 100);  // From 20 to 100 bps
 
         uint256 minUsdcOut = syrupUsdcIn * (10000 - slippage_) / 10000;
@@ -666,7 +673,7 @@ contract SyrupUserActionsSwapToDaiTests is SyrupUserActionsTestBase {
         _burnSyrupUsdc(account, syrupUsdcIn);
 
         // Increase this value once the balancer pool has more liquidity
-        syrupUsdcIn = bound(amount_, 2, 400e6);
+        syrupUsdcIn = bound(amount_,   2,  400e6);
         slippage_   = bound(slippage_, 10, 100);  // From 10 to 100 bps
 
         uint256 minDaiOut = syrupUsdcIn * (10000 - slippage_) / 10000;
@@ -702,7 +709,7 @@ contract SyrupUserActionsSwapToDaiTests is SyrupUserActionsTestBase {
         address depositor  = accountWallet.addr;
         uint256 deadline   = block.timestamp;
 
-        syrupUsdcIn = bound(amount_, 2, 400e6);
+        syrupUsdcIn = bound(amount_,   2,  400e6);
         slippage_   = bound(slippage_, 20, 100);  // From 20 to 100 bps
 
         uint256 minDaiOut = syrupUsdcIn * (10000 - slippage_) / 10000;
