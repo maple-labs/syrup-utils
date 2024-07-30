@@ -3,6 +3,8 @@ pragma solidity ^0.8.0;
 
 import { console2 as console, Test, Vm } from "../../modules/forge-std/src/Test.sol";
 
+import { DssLitePsm } from "../../modules/lite-psm/src/DssLitePsm.sol";
+
 import { IERC20Like, IPoolLike } from "../../contracts/interfaces/Interfaces.sol";
 import { SyrupUserActions }      from "../../contracts/SyrupUserActions.sol";
 
@@ -81,6 +83,24 @@ contract SyrupUserActionsTestBase is Test {
         IERC20Like(SYRUP_USDC).transfer(to_, amount_);
     }
 
+    // Replaces the old PSM contract with the new `LitePsm`.
+    function _setupLitePsm() internal {
+        IPSMLike psm = IPSMLike(PSM);
+
+        // The `gemJoin` contract contains all the USDC liquidity.
+        address gemJoin = psm.gemJoin();
+
+        // Create a `LitePsm` contract with the `gem` set as USDC and the `pocket` pointing to `gemJoin`.
+        address litePsm = address(new DssLitePsm(psm.ilk(), USDC, psm.daiJoin(), gemJoin));
+
+        // Ensure `LitePsm` can spend `gem` (USDC) on behalf of the `pocket` (`gemJoin`).
+        vm.prank(gemJoin);
+        usdc.approve(PSM, type(uint256).max);
+
+        // Finally, replace the old bytecode.
+        vm.etch(PSM, litePsm.code);
+    }
+
 }
 
 contract SyrupUserActionsConstructorTests is SyrupUserActionsTestBase {
@@ -109,7 +129,7 @@ contract SyrupUserActionsConstructorTests is SyrupUserActionsTestBase {
 
 }
 
-contract SyrupUserActionsSwapToUsdcTests is SyrupUserActionsTestBase {
+contract SwapToUsdcTestsWithLivePsm is SyrupUserActionsTestBase {
 
     function testFork_swapToUsdc_noApproval() external {
         vm.expectRevert("SUA:S:TRANSFER_FROM_FAILED");
@@ -517,7 +537,7 @@ contract SyrupUserActionsSwapToUsdcTests is SyrupUserActionsTestBase {
 
 }
 
-contract SyrupUserActionsSwapToDaiTests is SyrupUserActionsTestBase {
+contract SwapToDaiTestsWithLivePsm is SyrupUserActionsTestBase {
 
     function testFork_swapToDai_noApproval() external {
         vm.expectRevert("SUA:S:TRANSFER_FROM_FAILED");
@@ -898,6 +918,26 @@ contract SyrupUserActionsSwapToDaiTests is SyrupUserActionsTestBase {
         assertTrue(initialSdaiBalance > IERC20Like(SDAI).balanceOf(address(BAL_VAULT)));
 
         assertTrue(daiOut >= minDaiOut);
+    }
+
+}
+
+contract SwapToUsdcTestsWithLitePsm is SwapToUsdcTestsWithLivePsm {
+
+    function setUp() public virtual override {
+        super.setUp();
+
+        _setupLitePsm();
+    }
+
+}
+
+contract SwapToDaiTestsWithLitePsm is SwapToDaiTestsWithLivePsm {
+
+    function setUp() public virtual override {
+        super.setUp();
+
+        _setupLitePsm();
     }
 
 }

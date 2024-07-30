@@ -25,3 +25,6 @@
 [submodule "modules/globals-v2"]
 	path = modules/globals-v2
 	url = git@github.com:maple-labs/globals-v2.git
+[submodule "modules/lite-psm"]
+	path = modules/lite-psm
+	url = git@github.com:makerdao/dss-lite-psm.git
