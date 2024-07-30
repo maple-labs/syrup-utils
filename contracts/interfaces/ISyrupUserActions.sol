@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 interface ISyrupUserActions {
-    
+
     /**************************************************************************************************************************************/
     /*** Events                                                                                                                         ***/
     /**************************************************************************************************************************************/
@@ -96,13 +96,13 @@ interface ISyrupUserActions {
      *  @dev    Returns the address of the DAI token.
      *  @return dai The address of the DAI token.
      */
-    function DAI() external view returns (address dai);
+    function dai() external view returns (address dai);
 
     /**
      *  @dev    Returns the id of the Balancer Pool used for swapping.
      *  @return poolId The id of the Balancer Pool.
      */
-    function POOL_ID() external view returns (bytes32 poolId);
+    function poolId() external view returns (bytes32 poolId);
 
     /**
      *  @dev    Returns the precision of the PSM contract.
@@ -114,13 +114,13 @@ interface ISyrupUserActions {
      *  @dev    Returns the address of the PSM contract.
      *  @return psm The address of the PSM contract.
      */
-    function PSM() external view returns (address psm);
+    function psm() external view returns (address psm);
 
     /**
      *  @dev    Returns the address of the SyrupUSDC LP token.
      *  @return syrupUsdc The address of the SyrupUSDC LP token.
      */
-    function SYRUP_USDC() external view returns (address syrupUsdc);
+    function syrupUsdc() external view returns (address syrupUsdc);
 
     /**
      *  @dev    Returns the address of the USDC token.
@@ -132,6 +132,6 @@ interface ISyrupUserActions {
      *  @dev    Returns the address of the sDAI token.
      *  @return sDai The address of the sDAI token.
      */
-    function SDAI() external view returns (address sDai);
+    function sDai() external view returns (address sDai);
 
 }

@@ -42,7 +42,7 @@ contract SyrupUserActionsTestBase is Test {
     function setUp() public virtual {
         vm.createSelectFork(vm.envString("ETH_RPC_URL"), 20184000);
 
-        syrupUserActions = new SyrupUserActions(POOL_ID);
+        syrupUserActions = new SyrupUserActions(DAI, PSM, SDAI, SYRUP_USDC, POOL_ID);
 
         _mintSyrupUsdc(address(account), syrupUsdcIn);
     }
@@ -106,24 +106,22 @@ contract SyrupUserActionsTestBase is Test {
 contract SyrupUserActionsConstructorTests is SyrupUserActionsTestBase {
 
     function testFork_constructor() external {
-
-        syrupUserActions = new SyrupUserActions(POOL_ID);
+        syrupUserActions = new SyrupUserActions(DAI, PSM, SDAI, SYRUP_USDC, POOL_ID);
 
         assertEq(syrupUserActions.BAL_VAULT(),     0xBA12222222228d8Ba445958a75a0704d566BF2C8);
-        assertEq(syrupUserActions.DAI(),           0x6B175474E89094C44Da98b954EedeAC495271d0F);
-        assertEq(syrupUserActions.SDAI(),          0x83F20F44975D03b1b09e64809B757c47f942BEeA);
-        assertEq(syrupUserActions.PSM(),           0x89B78CfA322F6C5dE0aBcEecab66Aee45393cC5A);
-        assertEq(syrupUserActions.SYRUP_USDC(),    0x80ac24aA929eaF5013f6436cdA2a7ba190f5Cc0b);
-        assertEq(syrupUserActions.USDC(),          0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
-        assertEq(syrupUserActions.POOL_ID(),       POOL_ID);
+        assertEq(syrupUserActions.dai(),           0x6B175474E89094C44Da98b954EedeAC495271d0F);
+        assertEq(syrupUserActions.poolId(),        POOL_ID);
+        assertEq(syrupUserActions.psm(),           0x89B78CfA322F6C5dE0aBcEecab66Aee45393cC5A);
         assertEq(syrupUserActions.PSM_PRECISION(), 1e12);
+        assertEq(syrupUserActions.sDai(),          0x83F20F44975D03b1b09e64809B757c47f942BEeA);
+        assertEq(syrupUserActions.syrupUsdc(),     0x80ac24aA929eaF5013f6436cdA2a7ba190f5Cc0b);
+        assertEq(syrupUserActions.USDC(),          0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
 
         bytes32 locked = vm.load(address(syrupUserActions), bytes32(0));
 
         assertEq(uint256(locked), 1);
 
         assertEq(syrupUsdc.allowance(address(syrupUserActions), BAL_VAULT), type(uint256).max);
-
         assertEq(dai.allowance(address(syrupUserActions), PSM), type(uint256).max);
     }
 
