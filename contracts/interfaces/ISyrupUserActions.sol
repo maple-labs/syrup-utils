@@ -10,12 +10,13 @@ interface ISyrupUserActions {
     /**
      *  @dev   Emitted when a swap occurs.
      *  @param  owner     The address of the user that initiated the swap.
+     *  @param  receiver  The address that received the swapped tokens.
      *  @param  tokenIn   The address of the token being swapped.
      *  @param  amountIn  The amount of the token being swapped.
      *  @param  tokenOut  The address of the token received.
      *  @param  amountOut The amount of the token received.
      */
-    event Swap(address indexed owner, address tokenIn, uint256 amountIn, address tokenOut, uint256 amountOut);
+    event Swap(address indexed owner, address indexed receiver, address tokenIn, uint256 amountIn, address tokenOut, uint256 amountOut);
 
     /**************************************************************************************************************************************/
     /*** State-Changing Functions                                                                                                       ***/
@@ -25,14 +26,16 @@ interface ISyrupUserActions {
      *  @dev    Swaps SyrupUSDC LP token for DAI in a single transaction.
      *  @param  syrupUsdcIn The amount of SyrupUSDC to swap.
      *  @param  minDaiOut   The minimum amount of DAI to receive.
+     *  @param  receiver    The address to receive the DAI.
      *  @return daiOut      The amount of DAI received.
      */
-    function swapToDai(uint256 syrupUsdcIn, uint256 minDaiOut) external returns (uint256 daiOut);
+    function swapToDai(uint256 syrupUsdcIn, uint256 minDaiOut, address receiver) external returns (uint256 daiOut);
 
     /**
      *  @dev    Swaps SyrupUSDC LP token for DAI in a single transaction with permit.
      *  @param  syrupUsdcIn The amount of SyrupUSDC to swap.
      *  @param  minDaiOut   The minimum amount of DAI to receive.
+     *  @param  receiver    The address to receive the DAI.
      *  @param  deadline    The deadline for the permit.
      *  @param  v           The v value of the permit signature.
      *  @param  r           The r value of the permit signature.
@@ -42,6 +45,7 @@ interface ISyrupUserActions {
     function swapToDaiWithPermit(
         uint256 syrupUsdcIn,
         uint256 minDaiOut,
+        address receiver,
         uint256 deadline,
         uint8   v,
         bytes32 r,
@@ -52,14 +56,16 @@ interface ISyrupUserActions {
      *  @dev    Swaps SyrupUSDC LP token for USDC in a single transaction.
      *  @param  syrupUsdcIn The amount of SyrupUSDC to swap.
      *  @param  minUsdcOut  The minimum amount of USDC to receive.
+     *  @param  receiver    The address to receive the USDC.
      *  @return usdcOut     The amount of USDC received.
      */
-    function swapToUsdc(uint256 syrupUsdcIn, uint256 minUsdcOut) external returns (uint256 usdcOut);
+    function swapToUsdc(uint256 syrupUsdcIn, uint256 minUsdcOut, address receiver) external returns (uint256 usdcOut);
 
     /**
      *  @dev    Swaps SyrupUSDC LP token for USDC in a single transaction with permit.
      *  @param  syrupUsdcIn The amount of SyrupUSDC to swap.
      *  @param  minUsdcOut  The minimum amount of USDC to receive.
+     *  @param  receiver    The address to receive the USDC.
      *  @param  deadline    The deadline for the permit.
      *  @param  v           The v value of the permit signature.
      *  @param  r           The r value of the permit signature.
@@ -69,6 +75,7 @@ interface ISyrupUserActions {
     function swapToUsdcWithPermit(
         uint256 syrupUsdcIn,
         uint256 minUsdcOut,
+        address receiver,
         uint256 deadline,
         uint8   v,
         bytes32 r,

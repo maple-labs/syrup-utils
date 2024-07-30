@@ -45,13 +45,20 @@ contract SyrupUserActions is ISyrupUserActions {
     /*** User Actions                                                                                                                   ***/
     /**************************************************************************************************************************************/
 
-    function swapToDai(uint256 syrupUsdcIn_, uint256 minDaiOut_) external override nonReentrant returns (uint256 daiOut_) {
-        daiOut_ = _swap(syrupUsdcIn_, minDaiOut_, DAI);
+    function swapToDai(
+        uint256 syrupUsdcIn_, 
+        uint256 minDaiOut_, 
+        address receiver_
+    ) 
+        external override nonReentrant returns (uint256 daiOut_) 
+    {
+        daiOut_ = _swap(syrupUsdcIn_, minDaiOut_, DAI, receiver_);
     }
 
     function swapToDaiWithPermit(
         uint256 syrupUsdcIn_,
         uint256 minDaiOut_,
+        address receiver_,
         uint256 deadline_,
         uint8   v_,
         bytes32 r_,
@@ -61,16 +68,23 @@ contract SyrupUserActions is ISyrupUserActions {
     {
         _permit(SYRUP_USDC, deadline_, syrupUsdcIn_, v_, r_, s_);
 
-        daiOut_ = _swap(syrupUsdcIn_, minDaiOut_, DAI);
+        daiOut_ = _swap(syrupUsdcIn_, minDaiOut_, DAI, receiver_);
     }
 
-    function swapToUsdc(uint256 syrupUsdcIn_, uint256 minUsdcOut_) external override nonReentrant returns (uint256 usdcOut_) {
-       usdcOut_ = _swap(syrupUsdcIn_, minUsdcOut_, USDC);
+    function swapToUsdc(
+        uint256 syrupUsdcIn_, 
+        uint256 minUsdcOut_, 
+        address receiver_
+    ) 
+        external override nonReentrant returns (uint256 usdcOut_) 
+    {
+       usdcOut_ = _swap(syrupUsdcIn_, minUsdcOut_, USDC, receiver_);
     }
 
      function swapToUsdcWithPermit(
         uint256 syrupUsdcIn_,
         uint256 minUsdcOut_,
+        address receiver_,
         uint256 deadline_,
         uint8   v_,
         bytes32 r_,
@@ -80,14 +94,21 @@ contract SyrupUserActions is ISyrupUserActions {
     {
         _permit(SYRUP_USDC, deadline_, syrupUsdcIn_, v_, r_, s_);
 
-        usdcOut_ = _swap(syrupUsdcIn_, minUsdcOut_, USDC);
+        usdcOut_ = _swap(syrupUsdcIn_, minUsdcOut_, USDC, receiver_);
     }
 
     /**************************************************************************************************************************************/
     /*** Internal Swap Function                                                                                                         ***/
     /**************************************************************************************************************************************/
 
-    function _swap(uint256 syrupUsdcIn_, uint256 minAmountOut_, address assetOut_) internal returns (uint256 amountOut_) {
+    function _swap(
+        uint256 syrupUsdcIn_,
+        uint256 minAmountOut_,
+        address assetOut_,
+        address receiver_
+    ) 
+        internal returns (uint256 amountOut_) 
+    {
         // 1. Pull SyrupUSDC from the user
         require(ERC20Helper.transferFrom(SYRUP_USDC, msg.sender, address(this), syrupUsdcIn_), "SUA:S:TRANSFER_FROM_FAILED");
 
@@ -99,15 +120,15 @@ contract SyrupUserActions is ISyrupUserActions {
 
         // 4. If asset out is USDC, swap DAI for USDC, otherwise just transfer DAI
         if (assetOut_ == USDC) {
-            amountOut_ = _swapDaiForUsdc(daiOut_, msg.sender, minAmountOut_);
+            amountOut_ = _swapDaiForUsdc(daiOut_, receiver_, minAmountOut_);
         } else {
             amountOut_ = daiOut_;
-            require(ERC20Helper.transfer(DAI, msg.sender, daiOut_), "SUA:S:TRANSFER_FAILED");
+            require(ERC20Helper.transfer(DAI, receiver_, daiOut_), "SUA:S:TRANSFER_FAILED");
         }
 
         require(amountOut_ >= minAmountOut_, "SUA:S:INSUFFICIENT_AMOUNT_OUT");
 
-        emit Swap(msg.sender, SYRUP_USDC, syrupUsdcIn_, assetOut_, amountOut_);
+        emit Swap(msg.sender, receiver_, SYRUP_USDC, syrupUsdcIn_, assetOut_, amountOut_);
     }
 
     /**************************************************************************************************************************************/
