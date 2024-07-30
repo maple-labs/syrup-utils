@@ -46,11 +46,11 @@ contract SyrupUserActions is ISyrupUserActions {
     /**************************************************************************************************************************************/
 
     function swapToDai(
-        uint256 syrupUsdcIn_, 
-        uint256 minDaiOut_, 
+        uint256 syrupUsdcIn_,
+        uint256 minDaiOut_,
         address receiver_
-    ) 
-        external override nonReentrant returns (uint256 daiOut_) 
+    )
+        external override nonReentrant returns (uint256 daiOut_)
     {
         daiOut_ = _swap(syrupUsdcIn_, minDaiOut_, DAI, receiver_);
     }
@@ -72,11 +72,11 @@ contract SyrupUserActions is ISyrupUserActions {
     }
 
     function swapToUsdc(
-        uint256 syrupUsdcIn_, 
-        uint256 minUsdcOut_, 
+        uint256 syrupUsdcIn_,
+        uint256 minUsdcOut_,
         address receiver_
-    ) 
-        external override nonReentrant returns (uint256 usdcOut_) 
+    )
+        external override nonReentrant returns (uint256 usdcOut_)
     {
        usdcOut_ = _swap(syrupUsdcIn_, minUsdcOut_, USDC, receiver_);
     }
@@ -106,24 +106,21 @@ contract SyrupUserActions is ISyrupUserActions {
         uint256 minAmountOut_,
         address assetOut_,
         address receiver_
-    ) 
-        internal returns (uint256 amountOut_) 
+    )
+        internal returns (uint256 amountOut_)
     {
         // 1. Pull SyrupUSDC from the user
         require(ERC20Helper.transferFrom(SYRUP_USDC, msg.sender, address(this), syrupUsdcIn_), "SUA:S:TRANSFER_FROM_FAILED");
 
         // 2. Swap into sDAI
-        uint256 sdaiAmount = _swapViaBalancer(syrupUsdcIn_);
+        uint256 sdaiAmount_ = _swapViaBalancer(syrupUsdcIn_);
 
-        // 3. Redeem sDAI for DAI
-        uint256 daiOut_ = _redeemForDai(sdaiAmount);
+        // 3. Swap into DAI
+        amountOut_ = _redeemForDai(sdaiAmount_, assetOut_ == USDC ? address(this) : receiver_);
 
-        // 4. If asset out is USDC, swap DAI for USDC, otherwise just transfer DAI
+        // 4. If asset out is USDC, swap DAI  to USDC
         if (assetOut_ == USDC) {
-            amountOut_ = _swapDaiForUsdc(daiOut_, receiver_, minAmountOut_);
-        } else {
-            amountOut_ = daiOut_;
-            require(ERC20Helper.transfer(DAI, receiver_, daiOut_), "SUA:S:TRANSFER_FAILED");
+            amountOut_ = _swapDaiForUsdc(amountOut_, receiver_, minAmountOut_);
         }
 
         require(amountOut_ >= minAmountOut_, "SUA:S:INSUFFICIENT_AMOUNT_OUT");
@@ -143,8 +140,8 @@ contract SyrupUserActions is ISyrupUserActions {
         }
     }
 
-    function _redeemForDai(uint256 sdaiIn) internal returns (uint256 daiOut_) {
-        daiOut_ = ISDaiLike(SDAI).redeem(sdaiIn, address(this), address(this));
+    function _redeemForDai(uint256 sdaiIn_, address receiver_) internal returns (uint256 daiOut_) {
+        daiOut_ = ISDaiLike(SDAI).redeem(sdaiIn_, receiver_, address(this));
     }
 
     function _swapDaiForUsdc(uint256 daiIn_, address receiver_, uint256 minUsdcOut_) internal returns (uint256 usdcOut_) {
@@ -159,14 +156,14 @@ contract SyrupUserActions is ISyrupUserActions {
     }
 
     function _swapViaBalancer(uint256 syrupUsdcIn_) internal returns (uint256 sdaiOut_) {
-        IBalancerVaultLike.FundManagement memory funds = IBalancerVaultLike.FundManagement({
+        IBalancerVaultLike.FundManagement memory funds_ = IBalancerVaultLike.FundManagement({
             sender:              address(this),
             fromInternalBalance: false,
             recipient:           address(this),
             toInternalBalance:   false
         });
 
-        IBalancerVaultLike.SingleSwap memory swap = IBalancerVaultLike.SingleSwap({
+        IBalancerVaultLike.SingleSwap memory swap_ = IBalancerVaultLike.SingleSwap({
             poolId:   POOL_ID,
             kind:     IBalancerVaultLike.SwapKind.GIVEN_IN,
             assetIn:  SYRUP_USDC,
@@ -176,8 +173,8 @@ contract SyrupUserActions is ISyrupUserActions {
         });
 
         sdaiOut_ = IBalancerVaultLike(BAL_VAULT).swap({
-            singleSwap: swap,
-            funds:      funds,
+            singleSwap: swap_,
+            funds:      funds_,
             limit:      0,
             deadline:   block.timestamp
         });
