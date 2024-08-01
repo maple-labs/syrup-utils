@@ -1,4 +1,4 @@
-# Syrup Router
+# Syrup Utils
 
 ![CI](https://github.com/maple-labs/syrup-router-private/actions/workflows/ci.yml/badge.svg)
 [![GitBook - Documentation](https://img.shields.io/badge/GitBook-Documentation-orange?logo=gitbook&logoColor=white)](https://syrup.gitbook.io/syrup)
@@ -10,11 +10,27 @@
 
 ## Overview
 
-This repository contains the contracts and modules of the Syrup Router.
-
+This repository contains utility contracts that are used as part of Maple's permissionless offering Syrup. This include:
+| Path                         | Description | 
+|------------------------------|--------------------|
+| `contracts/SyrupDrip.sol` | Merkle Tree based airdrop distributor | 
+| `contracts/SyrupUserActions.sol` | Convenience contract for users to swap directly to USDC / DAI |
+| `contracts/MplUserActions.sol` | Convenience contract for users to migrate to Syrup / stSyrup |
+| `contracts/SyrupRouter.sol` | Router that allows deposits into a Maple Pool |
+| `contracts/utils/SyrupRateProvider.sol` | Price Oracle for Balancer pools |
 ## Submodules
 
 Submodules imported:
+* modules/erc20
+* modules/erc20-helper
+* modules/forge-std
+* modules/globals-v2
+* modules/lite-psm
+* modules/maple-token
+* modules/mpl-migration
+* modules/mpl-v2
+* modules/open-zeppelin
+* modules/xmpl
 
 Versions of dependencies can be checked with `git submodule status`.
 
@@ -23,8 +39,8 @@ Versions of dependencies can be checked with `git submodule status`.
 This project was built using [Foundry](https://book.getfoundry.sh/). Refer to installation instructions [here](https://github.com/foundry-rs/foundry#installation).
 
 ```sh
-git clone git@github.com:maple-labs/syrup-router-private.git
-cd syrup-router-private
+git clone git@github.com:maple-labs/syrup-utils-private.git
+cd syrup-utils-private
 forge install
 ```
 
