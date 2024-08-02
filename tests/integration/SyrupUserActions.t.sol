@@ -5,11 +5,11 @@ import { console2 as console, Test, Vm } from "../../modules/forge-std/src/Test.
 
 import { DssLitePsm } from "../../modules/lite-psm/src/DssLitePsm.sol";
 
-import { IERC20Like, IPoolLike } from "../../contracts/interfaces/Interfaces.sol";
-import { SyrupUserActions }      from "../../contracts/SyrupUserActions.sol";
+import { IPoolLike }        from "../../contracts/interfaces/Interfaces.sol";
+import { SyrupUserActions } from "../../contracts/SyrupUserActions.sol";
 
-import { MockReenteringSdai } from "../utils/Mocks.sol";
-import { IPSMLike }           from "../utils/Interfaces.sol";
+import { MockReenteringSdai }   from "../utils/Mocks.sol";
+import { IERC20Like, IPSMLike } from "../utils/Interfaces.sol";
 
 contract SyrupUserActionsTestBase is Test {
 
@@ -17,6 +17,7 @@ contract SyrupUserActionsTestBase is Test {
 
     address constant BAL_VAULT    = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
     address constant DAI          = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
+    address constant GEM_JOIN     = 0x0A59649758aa4d66E25f08Dd01271e891fe52199;
     address constant PSM          = 0x89B78CfA322F6C5dE0aBcEecab66Aee45393cC5A;
     address constant SDAI         = 0x83F20F44975D03b1b09e64809B757c47f942BEeA;
     address constant SYRUP_USDC   = 0x80ac24aA929eaF5013f6436cdA2a7ba190f5Cc0b;
@@ -29,7 +30,11 @@ contract SyrupUserActionsTestBase is Test {
     address account  = makeAddr("account");
     address receiver = makeAddr("receiver");
 
-    uint256 syrupUsdcIn = 1e6;
+    // Balances at forked block
+    uint256 daiSupply        = 3_216_775_619.466151466516065926e18;
+    uint256 syrupUsdcBalance = 500e6;
+    uint256 syrupUsdcIn      = 1e6;
+    uint256 usdcBalance      = 572_618_775.164220e6;
 
     IERC20Like dai       = IERC20Like(DAI);
     IERC20Like usdc      = IERC20Like(USDC);
@@ -300,9 +305,12 @@ contract SwapToUsdcTestsWithLivePsm is SyrupUserActionsTestBase {
 
         assertEq(syrupUsdc.balanceOf(address(account)),          syrupUsdcIn);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
-        assertEq(usdc.balanceOf(address(account)),               0);
-        assertEq(usdc.balanceOf(address(receiver)),              0);
-        assertEq(usdc.balanceOf(address(syrupUserActions)),      0);
+        assertEq(syrupUsdc.balanceOf(BAL_VAULT),                 syrupUsdcBalance);
+
+        assertEq(usdc.balanceOf(address(account)),          0);
+        assertEq(usdc.balanceOf(address(receiver)),         0);
+        assertEq(usdc.balanceOf(address(syrupUserActions)), 0);
+        assertEq(usdc.balanceOf(GEM_JOIN),                  usdcBalance);
 
         vm.expectEmit();
         emit Swap(account, receiver, SYRUP_USDC, syrupUsdcIn, USDC, 1.001996e6);
@@ -312,9 +320,12 @@ contract SwapToUsdcTestsWithLivePsm is SyrupUserActionsTestBase {
 
         assertEq(syrupUsdc.balanceOf(address(account)),          0);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
-        assertEq(usdc.balanceOf(address(account)),               0);
-        assertEq(usdc.balanceOf(address(receiver)),              usdcOut);
-        assertEq(usdc.balanceOf(address(syrupUserActions)),      0);
+        assertEq(syrupUsdc.balanceOf(BAL_VAULT),                 syrupUsdcBalance + syrupUsdcIn);
+
+        assertEq(usdc.balanceOf(address(account)),          0);
+        assertEq(usdc.balanceOf(address(receiver)),         usdcOut);
+        assertEq(usdc.balanceOf(address(syrupUserActions)), 0);
+        assertEq(usdc.balanceOf(GEM_JOIN),                  usdcBalance - usdcOut);
 
         assertTrue(usdcOut >= minOutput);
     }
@@ -328,8 +339,11 @@ contract SwapToUsdcTestsWithLivePsm is SyrupUserActionsTestBase {
 
         assertEq(syrupUsdc.balanceOf(address(account)),          syrupUsdcIn);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
-        assertEq(usdc.balanceOf(address(account)),               0);
-        assertEq(usdc.balanceOf(address(syrupUserActions)),      0);
+        assertEq(syrupUsdc.balanceOf(BAL_VAULT),                 syrupUsdcBalance);
+
+        assertEq(usdc.balanceOf(address(account)),          0);
+        assertEq(usdc.balanceOf(address(syrupUserActions)), 0);
+        assertEq(usdc.balanceOf(GEM_JOIN),                  usdcBalance);
 
         vm.expectEmit();
         emit Swap(account, account, SYRUP_USDC, syrupUsdcIn, USDC, 1.001996e6);
@@ -339,8 +353,11 @@ contract SwapToUsdcTestsWithLivePsm is SyrupUserActionsTestBase {
 
         assertEq(syrupUsdc.balanceOf(address(account)),          0);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
-        assertEq(usdc.balanceOf(address(account)),               usdcOut);
-        assertEq(usdc.balanceOf(address(syrupUserActions)),      0);
+        assertEq(syrupUsdc.balanceOf(BAL_VAULT),                 syrupUsdcBalance + syrupUsdcIn);
+
+        assertEq(usdc.balanceOf(address(account)),          usdcOut);
+        assertEq(usdc.balanceOf(address(syrupUserActions)), 0);
+        assertEq(usdc.balanceOf(GEM_JOIN),                  usdcBalance - usdcOut);
 
         assertTrue(usdcOut >= minOutput);
     }
@@ -363,9 +380,12 @@ contract SwapToUsdcTestsWithLivePsm is SyrupUserActionsTestBase {
 
         assertEq(syrupUsdc.balanceOf(address(account)),          syrupUsdcIn);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
-        assertEq(usdc.balanceOf(address(account)),               0);
-        assertEq(usdc.balanceOf(address(receiver)),              0);
-        assertEq(usdc.balanceOf(address(syrupUserActions)),      0);
+        assertEq(syrupUsdc.balanceOf(BAL_VAULT),                 syrupUsdcBalance);
+
+        assertEq(usdc.balanceOf(address(account)),          0);
+        assertEq(usdc.balanceOf(address(receiver)),         0);
+        assertEq(usdc.balanceOf(address(syrupUserActions)), 0);
+        assertEq(usdc.balanceOf(GEM_JOIN),                  usdcBalance);
 
         vm.expectEmit();
         emit Swap(account, receiver, SYRUP_USDC, syrupUsdcIn, USDC, 1.001996e6);
@@ -375,9 +395,12 @@ contract SwapToUsdcTestsWithLivePsm is SyrupUserActionsTestBase {
 
         assertEq(syrupUsdc.balanceOf(address(account)),          0);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
-        assertEq(usdc.balanceOf(address(account)),               0);
-        assertEq(usdc.balanceOf(address(receiver)),              usdcOut);
-        assertEq(usdc.balanceOf(address(syrupUserActions)),      0);
+        assertEq(syrupUsdc.balanceOf(BAL_VAULT),                 syrupUsdcBalance + syrupUsdcIn);
+
+        assertEq(usdc.balanceOf(address(account)),          0);
+        assertEq(usdc.balanceOf(address(receiver)),         usdcOut);
+        assertEq(usdc.balanceOf(address(syrupUserActions)), 0);
+        assertEq(usdc.balanceOf(GEM_JOIN),                  usdcBalance - usdcOut);
 
         assertTrue(usdcOut >= minOutput);
     }
@@ -400,8 +423,11 @@ contract SwapToUsdcTestsWithLivePsm is SyrupUserActionsTestBase {
 
         assertEq(syrupUsdc.balanceOf(address(account)),          syrupUsdcIn);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
-        assertEq(usdc.balanceOf(address(account)),               0);
-        assertEq(usdc.balanceOf(address(syrupUserActions)),      0);
+        assertEq(syrupUsdc.balanceOf(BAL_VAULT),                 syrupUsdcBalance);
+
+        assertEq(usdc.balanceOf(address(account)),          0);
+        assertEq(usdc.balanceOf(address(syrupUserActions)), 0);
+        assertEq(usdc.balanceOf(GEM_JOIN),                  usdcBalance);
 
         vm.expectEmit();
         emit Swap(account, account, SYRUP_USDC, syrupUsdcIn, USDC, 1.001996e6);
@@ -411,8 +437,11 @@ contract SwapToUsdcTestsWithLivePsm is SyrupUserActionsTestBase {
 
         assertEq(syrupUsdc.balanceOf(address(account)),          0);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
-        assertEq(usdc.balanceOf(address(account)),               usdcOut);
-        assertEq(usdc.balanceOf(address(syrupUserActions)),      0);
+        assertEq(syrupUsdc.balanceOf(BAL_VAULT),                 syrupUsdcBalance + syrupUsdcIn);
+
+        assertEq(usdc.balanceOf(address(account)),          usdcOut);
+        assertEq(usdc.balanceOf(address(syrupUserActions)), 0);
+        assertEq(usdc.balanceOf(GEM_JOIN),                  usdcBalance - usdcOut);
 
         assertTrue(usdcOut >= minOutput);
     }
@@ -430,18 +459,24 @@ contract SwapToUsdcTestsWithLivePsm is SyrupUserActionsTestBase {
 
         assertEq(syrupUsdc.balanceOf(address(account)),          syrupUsdcIn);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
-        assertEq(usdc.balanceOf(address(account)),               0);
-        assertEq(usdc.balanceOf(address(receiver)),              0);
-        assertEq(usdc.balanceOf(address(syrupUserActions)),      0);
+        assertEq(syrupUsdc.balanceOf(BAL_VAULT),                 syrupUsdcBalance);
+
+        assertEq(usdc.balanceOf(address(account)),          0);
+        assertEq(usdc.balanceOf(address(receiver)),         0);
+        assertEq(usdc.balanceOf(address(syrupUserActions)), 0);
+        assertEq(usdc.balanceOf(GEM_JOIN),                  usdcBalance);
 
         vm.prank(account);
         uint256 usdcOut = syrupUserActions.swapToUsdc(syrupUsdcIn, minOutput, receiver);
 
         assertEq(syrupUsdc.balanceOf(address(account)),          0);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
-        assertEq(usdc.balanceOf(address(account)),               0);
-        assertEq(usdc.balanceOf(address(receiver)),              usdcOut);
-        assertEq(usdc.balanceOf(address(syrupUserActions)),      0);
+        assertEq(syrupUsdc.balanceOf(BAL_VAULT),                 syrupUsdcBalance + syrupUsdcIn);
+
+        assertEq(usdc.balanceOf(address(account)),          0);
+        assertEq(usdc.balanceOf(address(receiver)),         usdcOut);
+        assertEq(usdc.balanceOf(address(syrupUserActions)), 0);
+        assertEq(usdc.balanceOf(GEM_JOIN),                  usdcBalance - usdcOut);
 
         assertTrue(usdcOut >= minOutput);
     }
@@ -468,18 +503,24 @@ contract SwapToUsdcTestsWithLivePsm is SyrupUserActionsTestBase {
 
         assertEq(syrupUsdc.balanceOf(address(account)),          syrupUsdcIn);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
-        assertEq(usdc.balanceOf(address(account)),               0);
-        assertEq(usdc.balanceOf(address(receiver)),              0);
-        assertEq(usdc.balanceOf(address(syrupUserActions)),      0);
+        assertEq(syrupUsdc.balanceOf(BAL_VAULT),                 syrupUsdcBalance);
+
+        assertEq(usdc.balanceOf(address(account)),          0);
+        assertEq(usdc.balanceOf(address(receiver)),         0);
+        assertEq(usdc.balanceOf(address(syrupUserActions)), 0);
+        assertEq(usdc.balanceOf(GEM_JOIN),                  usdcBalance);
 
         vm.prank(account);
         uint256 usdcOut = syrupUserActions.swapToUsdc(syrupUsdcIn, minUsdcOut, receiver);
 
         assertEq(syrupUsdc.balanceOf(address(account)),          0);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
-        assertEq(usdc.balanceOf(address(account)),               0);
-        assertEq(usdc.balanceOf(address(receiver)),              usdcOut);
-        assertEq(usdc.balanceOf(address(syrupUserActions)),      0);
+        assertEq(syrupUsdc.balanceOf(BAL_VAULT),                 syrupUsdcBalance + syrupUsdcIn);
+
+        assertEq(usdc.balanceOf(address(account)),          0);
+        assertEq(usdc.balanceOf(address(receiver)),         usdcOut);
+        assertEq(usdc.balanceOf(address(syrupUserActions)), 0);
+        assertEq(usdc.balanceOf(GEM_JOIN),                  usdcBalance - usdcOut);
 
         assertTrue(usdcOut >= minUsdcOut);
     }
@@ -510,18 +551,24 @@ contract SwapToUsdcTestsWithLivePsm is SyrupUserActionsTestBase {
 
         assertEq(syrupUsdc.balanceOf(address(account)),          syrupUsdcIn);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
-        assertEq(usdc.balanceOf(address(account)),               0);
-        assertEq(usdc.balanceOf(address(receiver)),              0);
-        assertEq(usdc.balanceOf(address(syrupUserActions)),      0);
+        assertEq(syrupUsdc.balanceOf(BAL_VAULT),                 syrupUsdcBalance);
+
+        assertEq(usdc.balanceOf(address(account)),          0);
+        assertEq(usdc.balanceOf(address(receiver)),         0);
+        assertEq(usdc.balanceOf(address(syrupUserActions)), 0);
+        assertEq(usdc.balanceOf(GEM_JOIN),                  usdcBalance);
 
         vm.prank(account);
         uint256 usdcOut = syrupUserActions.swapToUsdcWithPermit(syrupUsdcIn, minUsdcOut, receiver, deadline, v, r, s);
 
         assertEq(syrupUsdc.balanceOf(address(account)),          0);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
-        assertEq(usdc.balanceOf(address(account)),               0);
-        assertEq(usdc.balanceOf(address(receiver)),              usdcOut);
-        assertEq(usdc.balanceOf(address(syrupUserActions)),      0);
+        assertEq(syrupUsdc.balanceOf(BAL_VAULT),                 syrupUsdcBalance + syrupUsdcIn);
+
+        assertEq(usdc.balanceOf(address(account)),          0);
+        assertEq(usdc.balanceOf(address(receiver)),         usdcOut);
+        assertEq(usdc.balanceOf(address(syrupUserActions)), 0);
+        assertEq(usdc.balanceOf(GEM_JOIN),                  usdcBalance - usdcOut);
 
         assertTrue(usdcOut >= minUsdcOut);
     }
@@ -706,9 +753,13 @@ contract SwapToDaiTestsWithLivePsm is SyrupUserActionsTestBase {
 
         assertEq(syrupUsdc.balanceOf(address(account)),          syrupUsdcIn);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
-        assertEq(dai.balanceOf(address(account)),                0);
-        assertEq(dai.balanceOf(address(receiver)),               0);
-        assertEq(dai.balanceOf(address(syrupUserActions)),       0);
+        assertEq(syrupUsdc.balanceOf(BAL_VAULT),                 syrupUsdcBalance);
+
+        assertEq(dai.balanceOf(address(account)),          0);
+        assertEq(dai.balanceOf(address(receiver)),         0);
+        assertEq(dai.balanceOf(address(syrupUserActions)), 0);
+
+        assertEq(dai.totalSupply(), daiSupply);
 
         vm.expectEmit();
         emit Swap(account, receiver, SYRUP_USDC, syrupUsdcIn, DAI, 1.001996538096073486e18);
@@ -718,9 +769,13 @@ contract SwapToDaiTestsWithLivePsm is SyrupUserActionsTestBase {
 
         assertEq(syrupUsdc.balanceOf(address(account)),          0);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
-        assertEq(dai.balanceOf(address(account)),                0);
-        assertEq(dai.balanceOf(address(receiver)),               daiOut);
-        assertEq(dai.balanceOf(address(syrupUserActions)),       0);
+        assertEq(syrupUsdc.balanceOf(BAL_VAULT),                 syrupUsdcBalance + syrupUsdcIn);
+
+        assertEq(dai.balanceOf(address(account)),          0);
+        assertEq(dai.balanceOf(address(receiver)),         daiOut);
+        assertEq(dai.balanceOf(address(syrupUserActions)), 0);
+
+        assertEq(dai.totalSupply(), daiSupply + daiOut);
 
         assertTrue(initialSdaiBalance > IERC20Like(SDAI).balanceOf(address(BAL_VAULT)));
 
@@ -738,8 +793,12 @@ contract SwapToDaiTestsWithLivePsm is SyrupUserActionsTestBase {
 
         assertEq(syrupUsdc.balanceOf(address(account)),          syrupUsdcIn);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
-        assertEq(dai.balanceOf(address(account)),                0);
-        assertEq(dai.balanceOf(address(syrupUserActions)),       0);
+        assertEq(syrupUsdc.balanceOf(BAL_VAULT),                 syrupUsdcBalance);
+
+        assertEq(dai.balanceOf(address(account)),          0);
+        assertEq(dai.balanceOf(address(syrupUserActions)), 0);
+
+        assertEq(dai.totalSupply(), daiSupply);
 
         vm.expectEmit();
         emit Swap(account, account, SYRUP_USDC, syrupUsdcIn, DAI, 1.001996538096073486e18);
@@ -749,8 +808,12 @@ contract SwapToDaiTestsWithLivePsm is SyrupUserActionsTestBase {
 
         assertEq(syrupUsdc.balanceOf(address(account)),          0);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
-        assertEq(dai.balanceOf(address(account)),                daiOut);
-        assertEq(dai.balanceOf(address(syrupUserActions)),       0);
+        assertEq(syrupUsdc.balanceOf(BAL_VAULT),                 syrupUsdcBalance + syrupUsdcIn);
+
+        assertEq(dai.balanceOf(address(account)),          daiOut);
+        assertEq(dai.balanceOf(address(syrupUserActions)), 0);
+
+        assertEq(dai.totalSupply(), daiSupply + daiOut);
 
         assertTrue(initialSdaiBalance > IERC20Like(SDAI).balanceOf(address(BAL_VAULT)));
 
@@ -777,9 +840,13 @@ contract SwapToDaiTestsWithLivePsm is SyrupUserActionsTestBase {
 
         assertEq(syrupUsdc.balanceOf(address(account)),          syrupUsdcIn);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
-        assertEq(dai.balanceOf(address(account)),                0);
-        assertEq(dai.balanceOf(address(receiver)),               0);
-        assertEq(dai.balanceOf(address(syrupUserActions)),       0);
+        assertEq(syrupUsdc.balanceOf(BAL_VAULT),                 syrupUsdcBalance);
+
+        assertEq(dai.balanceOf(address(account)),          0);
+        assertEq(dai.balanceOf(address(receiver)),         0);
+        assertEq(dai.balanceOf(address(syrupUserActions)), 0);
+
+        assertEq(dai.totalSupply(), daiSupply);
 
         vm.expectEmit();
         emit Swap(account, receiver, SYRUP_USDC, syrupUsdcIn, DAI, 1.001996538096073486e18);
@@ -789,9 +856,13 @@ contract SwapToDaiTestsWithLivePsm is SyrupUserActionsTestBase {
 
         assertEq(syrupUsdc.balanceOf(address(account)),          0);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
-        assertEq(dai.balanceOf(address(account)),                0);
-        assertEq(dai.balanceOf(address(receiver)),               daiOut);
-        assertEq(dai.balanceOf(address(syrupUserActions)),       0);
+        assertEq(syrupUsdc.balanceOf(BAL_VAULT),                 syrupUsdcBalance + syrupUsdcIn);
+
+        assertEq(dai.balanceOf(address(account)),          0);
+        assertEq(dai.balanceOf(address(receiver)),         daiOut);
+        assertEq(dai.balanceOf(address(syrupUserActions)), 0);
+
+        assertEq(dai.totalSupply(), daiSupply + daiOut);
 
         assertTrue(initialSdaiBalance > IERC20Like(SDAI).balanceOf(address(BAL_VAULT)));
 
@@ -818,8 +889,12 @@ contract SwapToDaiTestsWithLivePsm is SyrupUserActionsTestBase {
 
         assertEq(syrupUsdc.balanceOf(address(account)),          syrupUsdcIn);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
+        assertEq(syrupUsdc.balanceOf(BAL_VAULT),                 syrupUsdcBalance);
+
         assertEq(dai.balanceOf(address(account)),                0);
         assertEq(dai.balanceOf(address(syrupUserActions)),       0);
+
+        assertEq(dai.totalSupply(), daiSupply);
 
         vm.expectEmit();
         emit Swap(account, account, SYRUP_USDC, syrupUsdcIn, DAI, 1.001996538096073486e18);
@@ -829,8 +904,12 @@ contract SwapToDaiTestsWithLivePsm is SyrupUserActionsTestBase {
 
         assertEq(syrupUsdc.balanceOf(address(account)),          0);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
-        assertEq(dai.balanceOf(address(account)),                daiOut);
-        assertEq(dai.balanceOf(address(syrupUserActions)),       0);
+        assertEq(syrupUsdc.balanceOf(BAL_VAULT),                 syrupUsdcBalance + syrupUsdcIn);
+
+        assertEq(dai.balanceOf(address(account)),          daiOut);
+        assertEq(dai.balanceOf(address(syrupUserActions)), 0);
+
+        assertEq(dai.totalSupply(), daiSupply + daiOut);
 
         assertTrue(initialSdaiBalance > IERC20Like(SDAI).balanceOf(address(BAL_VAULT)));
 
@@ -855,18 +934,26 @@ contract SwapToDaiTestsWithLivePsm is SyrupUserActionsTestBase {
 
         assertEq(syrupUsdc.balanceOf(address(account)),          syrupUsdcIn);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
-        assertEq(dai.balanceOf(address(account)),                0);
-        assertEq(dai.balanceOf(address(receiver)),               0);
-        assertEq(dai.balanceOf(address(syrupUserActions)),       0);
+        assertEq(syrupUsdc.balanceOf(BAL_VAULT),                 syrupUsdcBalance);
+
+        assertEq(dai.balanceOf(address(account)),          0);
+        assertEq(dai.balanceOf(address(receiver)),         0);
+        assertEq(dai.balanceOf(address(syrupUserActions)), 0);
+
+        assertEq(dai.totalSupply(), daiSupply);
 
         vm.prank(account);
         uint256 daiOut = syrupUserActions.swapToDai(syrupUsdcIn, minDaiOut, receiver);
 
         assertEq(syrupUsdc.balanceOf(address(account)),          0);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
-        assertEq(dai.balanceOf(address(account)),                0);
-        assertEq(dai.balanceOf(address(receiver)),               daiOut);
-        assertEq(dai.balanceOf(address(syrupUserActions)),       0);
+        assertEq(syrupUsdc.balanceOf(BAL_VAULT),                 syrupUsdcBalance + syrupUsdcIn);
+
+        assertEq(dai.balanceOf(address(account)),          0);
+        assertEq(dai.balanceOf(address(receiver)),         daiOut);
+        assertEq(dai.balanceOf(address(syrupUserActions)), 0);
+
+        assertEq(dai.totalSupply(), daiSupply + daiOut);
 
         assertTrue(initialSdaiBalance > IERC20Like(SDAI).balanceOf(address(BAL_VAULT)));
 

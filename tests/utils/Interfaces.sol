@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.0;
 
+import { IERC20Like as IERC20LikeBase } from "../../contracts/interfaces/Interfaces.sol";
+
 interface IBalancerVaultLike {
 
     enum SwapKind { GIVEN_IN, GIVEN_OUT }
@@ -39,6 +41,12 @@ interface IBalancerVaultLike {
             uint256 blockNumber,
             address assetManager
         );
+}
+
+interface IERC20Like is IERC20LikeBase {
+
+    function totalSupply() external returns (uint256 totalSupply);
+
 }
 
 interface IPotLike {
