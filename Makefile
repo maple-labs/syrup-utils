@@ -6,3 +6,6 @@ coverage:
 
 test:
 	@scripts/test.sh -p default
+
+deploy:
+	@scripts/deploy.sh
