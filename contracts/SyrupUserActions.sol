@@ -9,17 +9,17 @@ import { IBalancerVaultLike, IERC20Like, IPSMLike, ISDaiLike } from "./interface
 
 contract SyrupUserActions is ISyrupUserActions {
 
-    address constant public override BAL_VAULT = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
-    address constant public override USDC      = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+    address public constant override BAL_VAULT = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
+    address public constant override USDC      = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
 
-    uint256 constant public override PSM_PRECISION = 1e12;  // The PSM expected 1e18 minus the decimals of the gem (eg. 18 - 6 = 12)
+    uint256 public constant override PSM_PRECISION = 1e12;  // The PSM expected 1e18 minus the decimals of the gem (eg. 18 - 6 = 12)
 
-    address immutable public override dai;
-    address immutable public override psm;
-    address immutable public override sDai;
-    address immutable public override syrupUsdc;
+    address public immutable override dai;
+    address public immutable override psm;
+    address public immutable override sDai;
+    address public immutable override syrupUsdc;
 
-    bytes32 immutable public override poolId;
+    bytes32 public immutable  override poolId;
 
     uint256 internal _locked;
 

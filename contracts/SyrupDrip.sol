@@ -13,9 +13,9 @@ contract SyrupDrip is ISyrupDrip {
     /*** State Variables                                                                                                                ***/
     /**************************************************************************************************************************************/
 
-    address public override asset;
-    address public override globals;
-    address public override stakedSyrup;
+    address public immutable override asset;
+    address public immutable override globals;
+    address public immutable override stakedSyrup;
 
     bytes32 public override root;
 
