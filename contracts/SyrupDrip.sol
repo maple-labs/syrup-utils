@@ -99,6 +99,20 @@ contract SyrupDrip is ISyrupDrip {
     }
 
     /**************************************************************************************************************************************/
+    /*** View Functions                                                                                                                 ***/
+    /**************************************************************************************************************************************/
+
+    // Checks if a token allocation has already been claimed.
+    function isClaimed(uint256 id_) public view returns (bool isClaimed_) {
+        uint256 key_  = id_ / 256;
+        uint256 flag_ = id_ % 256;
+        uint256 word_ = bitmaps[key_];
+        uint256 mask_ = (1 << flag_);
+
+        isClaimed_ = word_ & mask_ == mask_;
+    }
+
+    /**************************************************************************************************************************************/
     /*** Internal Functions                                                                                                             ***/
     /**************************************************************************************************************************************/
 
@@ -111,7 +125,7 @@ contract SyrupDrip is ISyrupDrip {
     )
         internal
     {
-        require(!_isClaimed(id_),            "SD:C:ALREADY_CLAIMED");
+        require(!isClaimed(id_),             "SD:C:ALREADY_CLAIMED");
         require(block.timestamp <= deadline, "SD:C:EXPIRED_DEADLINE");
 
         bytes32 leaf_ = keccak256(bytes.concat(keccak256(abi.encode(id_, owner_, claimAmount_))));
@@ -125,16 +139,6 @@ contract SyrupDrip is ISyrupDrip {
         }
 
         emit Claimed(id_, owner_, claimAmount_);
-    }
-
-    // Checks if a token allocation has already been claimed.
-    function _isClaimed(uint256 id_) internal view returns (bool isClaimed_) {
-        uint256 key_  = id_ / 256;
-        uint256 flag_ = id_ % 256;
-        uint256 word_ = bitmaps[key_];
-        uint256 mask_ = (1 << flag_);
-
-        isClaimed_ = word_ & mask_ == mask_;
     }
 
     // Registers a token allocation as claimed.

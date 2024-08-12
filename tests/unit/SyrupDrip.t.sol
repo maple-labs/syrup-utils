@@ -186,6 +186,8 @@ contract SyrupDripClaimTests is SyrupDripTestBase, MerkleBase {
         assertEq(drip.bitmaps(0), 0);
         assertEq(drip.bitmaps(1), 0);
 
+        assertEq(drip.isClaimed(id_habibi), false);
+
         vm.expectEmit();
         emit Claimed(id_habibi, address_habibi, amount_habibi);
 
@@ -196,6 +198,8 @@ contract SyrupDripClaimTests is SyrupDripTestBase, MerkleBase {
 
         assertEq(drip.bitmaps(0), 2 ** id_habibi);
         assertEq(drip.bitmaps(1), 0);
+
+        assertEq(drip.isClaimed(id_habibi), true);
     }
 
     function test_claim_success_multipleClaims() external {
@@ -205,6 +209,9 @@ contract SyrupDripClaimTests is SyrupDripTestBase, MerkleBase {
 
         assertEq(drip.bitmaps(0), 0);
         assertEq(drip.bitmaps(1), 0);
+
+        assertEq(drip.isClaimed(id_chad),   false);
+        assertEq(drip.isClaimed(id_habibi), false);
 
         vm.expectEmit();
         emit Claimed(id_chad, address_chad, amount_chad);
@@ -218,6 +225,9 @@ contract SyrupDripClaimTests is SyrupDripTestBase, MerkleBase {
         assertEq(drip.bitmaps(0), 2 ** id_chad);
         assertEq(drip.bitmaps(1), 0);
 
+        assertEq(drip.isClaimed(id_chad),   true);
+        assertEq(drip.isClaimed(id_habibi), false);
+
         vm.expectEmit();
         emit Claimed(id_habibi, address_habibi, amount_habibi);
 
@@ -229,6 +239,9 @@ contract SyrupDripClaimTests is SyrupDripTestBase, MerkleBase {
 
         assertEq(drip.bitmaps(0), 2 ** id_chad + 2 ** id_habibi);
         assertEq(drip.bitmaps(1), 0);
+
+        assertEq(drip.isClaimed(id_chad),   true);
+        assertEq(drip.isClaimed(id_habibi), true);
     }
 
     function test_claim_success_multipleSlots() external {
@@ -238,6 +251,9 @@ contract SyrupDripClaimTests is SyrupDripTestBase, MerkleBase {
 
         assertEq(drip.bitmaps(0), 0);
         assertEq(drip.bitmaps(1), 0);
+
+        assertEq(drip.isClaimed(id_chad),  false);
+        assertEq(drip.isClaimed(id_degen), false);
 
         vm.expectEmit();
         emit Claimed(id_chad, address_chad, amount_chad);
@@ -250,6 +266,9 @@ contract SyrupDripClaimTests is SyrupDripTestBase, MerkleBase {
 
         assertEq(drip.bitmaps(0), 2 ** id_chad);
         assertEq(drip.bitmaps(1), 0);
+
+        assertEq(drip.isClaimed(id_chad),  true);
+        assertEq(drip.isClaimed(id_degen), false);
 
         vm.expectEmit();
         emit Claimed(id_degen, address_degen, amount_degen);
@@ -266,6 +285,9 @@ contract SyrupDripClaimTests is SyrupDripTestBase, MerkleBase {
         assertEq(drip.bitmaps(3), 0);
         assertEq(drip.bitmaps(4), 0);
         assertEq(drip.bitmaps(5), 2 ** (id_degen % 256));
+
+        assertEq(drip.isClaimed(id_chad),  true);
+        assertEq(drip.isClaimed(id_degen), true);
     }
 
     function test_claim_success_multipleInstances() external {
@@ -274,6 +296,9 @@ contract SyrupDripClaimTests is SyrupDripTestBase, MerkleBase {
 
         assertEq(drip.bitmaps(0), 0);
         assertEq(drip.bitmaps(1), 0);
+
+        assertEq(drip.isClaimed(id_chad),  false);
+        assertEq(drip.isClaimed(id_chad2), false);
 
         vm.expectEmit();
         emit Claimed(id_chad, address_chad, amount_chad);
@@ -286,6 +311,9 @@ contract SyrupDripClaimTests is SyrupDripTestBase, MerkleBase {
         assertEq(drip.bitmaps(0), 2 ** id_chad);
         assertEq(drip.bitmaps(1), 0);
 
+        assertEq(drip.isClaimed(id_chad),  true);
+        assertEq(drip.isClaimed(id_chad2), false);
+
         vm.expectEmit();
         emit Claimed(id_chad2, address_chad2, amount_chad2);
 
@@ -296,6 +324,9 @@ contract SyrupDripClaimTests is SyrupDripTestBase, MerkleBase {
 
         assertEq(drip.bitmaps(0), 2 ** id_chad + 2 ** id_chad2);
         assertEq(drip.bitmaps(1), 0);
+
+        assertEq(drip.isClaimed(id_chad),  true);
+        assertEq(drip.isClaimed(id_chad2), true);
     }
 
     function test_claim_success_zeroAmount() external {
@@ -304,6 +335,8 @@ contract SyrupDripClaimTests is SyrupDripTestBase, MerkleBase {
 
         assertEq(drip.bitmaps(0), 0);
         assertEq(drip.bitmaps(1), 0);
+
+        assertEq(drip.isClaimed(id_zero), false);
 
         vm.expectEmit();
         emit Claimed(id_zero, address_zero, amount_zero);
@@ -315,6 +348,8 @@ contract SyrupDripClaimTests is SyrupDripTestBase, MerkleBase {
 
         assertEq(drip.bitmaps(0), 2 ** id_zero);
         assertEq(drip.bitmaps(1), 0);
+
+        assertEq(drip.isClaimed(id_zero), true);
     }
 
     function test_claim_success_duplicateId() external {
@@ -323,6 +358,8 @@ contract SyrupDripClaimTests is SyrupDripTestBase, MerkleBase {
 
         assertEq(drip.bitmaps(0), 0);
         assertEq(drip.bitmaps(1), 0);
+
+        assertEq(drip.isClaimed(id_habibi), false);
 
         vm.expectEmit();
         emit Claimed(id_habibi, address_habibi, amount_habibi);
@@ -334,6 +371,8 @@ contract SyrupDripClaimTests is SyrupDripTestBase, MerkleBase {
 
         assertEq(drip.bitmaps(0), 2 ** id_habibi);
         assertEq(drip.bitmaps(1), 0);
+
+        assertEq(drip.isClaimed(id_habibi), true);
 
         vm.expectRevert("SD:C:ALREADY_CLAIMED");
         drip.claim(id_duplicate, address_duplicate, amount_duplicate, proof_duplicate);
@@ -349,6 +388,10 @@ contract SyrupDripClaimTests is SyrupDripTestBase, MerkleBase {
         assertEq(drip.bitmaps(0), 0);
         assertEq(drip.bitmaps(1), 0);
 
+        assertEq(drip.isClaimed(id_habibi), false);
+        assertEq(drip.isClaimed(id_degen),  false);
+        assertEq(drip.isClaimed(id_next),   false);
+
         vm.expectEmit();
         emit Claimed(id_habibi, address_habibi, amount_habibi);
 
@@ -360,6 +403,10 @@ contract SyrupDripClaimTests is SyrupDripTestBase, MerkleBase {
 
         assertEq(drip.bitmaps(0), 2 ** id_habibi);
         assertEq(drip.bitmaps(1), 0);
+
+        assertEq(drip.isClaimed(id_habibi), true);
+        assertEq(drip.isClaimed(id_degen),  false);
+        assertEq(drip.isClaimed(id_next),   false);
 
         // Update token allocations.
         vm.prank(operationalAdmin);
@@ -381,6 +428,10 @@ contract SyrupDripClaimTests is SyrupDripTestBase, MerkleBase {
 
         assertEq(drip.bitmaps(0), 2 ** id_habibi + 2 ** id_next);
         assertEq(drip.bitmaps(1), 0);
+
+        assertEq(drip.isClaimed(id_habibi), true);
+        assertEq(drip.isClaimed(id_degen),  false);
+        assertEq(drip.isClaimed(id_next),   true);
     }
 
 }
