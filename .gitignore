@@ -21,3 +21,17 @@ docs/
 
 # Dotenv file
 .env
+
+# Yarn
+node_modules
+dist
+coverage
+
+# Yarn 3 / Berry
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions

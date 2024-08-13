@@ -1,0 +1,56 @@
+{
+  "name": "Test allocation",
+  "description": null,
+  "merkleRoot": "0xa8e5d44a46f0b84dc5f03f965a804d909630bc4651cec286c9bd1b0fa1adbc94",
+  "maximumId": 4,
+  "deadline": null,
+  "allocations": [
+    {
+      "id": 0,
+      "address": "0x253553366Da8546fC250F225fe3d25d0C782303b",
+      "amount": "4000000000000000000",
+      "proof": [
+        "0x79b73569d875c4e8e1e6952e1c7e6f039e47077fbefb8295d524f44e7af969cd",
+        "0xe8ec4504c84268aa3759782a096e215b05007e48510a7c1c3e91584204239c68"
+      ]
+    },
+    {
+      "id": 1,
+      "address": "0xA8cCCccCcB2E853D3A882B2e9dF5357c2D892adA",
+      "amount": "15000000000000000000",
+      "proof": [
+        "0x60ae4df4f499d4ea8bd9ecfdc4b64422d9ad1a2900d167e655ff531753bec6be",
+        "0xe9f211d57b0e6a487488ab62d2384d925cc399d85b43b03e81c2276ec88d371f",
+        "0xea9e9bf06049c5ae2ef3fd9f02989083ae0f8afe955235b41d3db78bf97a3b09"
+      ]
+    },
+    {
+      "id": 2,
+      "address": "0xb7cC612Ecb2E853D3a882B0f9cF5357C2D892ADb",
+      "amount": "1000000000000000001",
+      "proof": [
+        "0x9dfd054ba2848217a9c93d65bd946dc7e9c88cdf522ea476d3be7c2b667b18af",
+        "0xea9e9bf06049c5ae2ef3fd9f02989083ae0f8afe955235b41d3db78bf97a3b09"
+      ]
+    },
+    {
+      "id": 3,
+      "address": "0x0ac850A303169bD762a06567cAad02a8e680E7B3",
+      "amount": "1337000000000000000",
+      "proof": [
+        "0x0c2687ac46821003af3352063e2314144aa92f9c0e53d6cd7fddc83517fb2ada",
+        "0xe9f211d57b0e6a487488ab62d2384d925cc399d85b43b03e81c2276ec88d371f",
+        "0xea9e9bf06049c5ae2ef3fd9f02989083ae0f8afe955235b41d3db78bf97a3b09"
+      ]
+    },
+    {
+      "id": 4,
+      "address": "0xd142812ecB2E853d3a882B0f9cF5357C2d892adb",
+      "amount": "1000000000000000000000000",
+      "proof": [
+        "0xcb1eccf1a2cec71b8ca7140cd8eedea298629357c3ae2ae602ef2354a826ec64",
+        "0xe8ec4504c84268aa3759782a096e215b05007e48510a7c1c3e91584204239c68"
+      ]
+    }
+  ]
+}
