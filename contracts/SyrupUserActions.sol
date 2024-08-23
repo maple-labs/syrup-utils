@@ -125,7 +125,7 @@ contract SyrupUserActions is ISyrupUserActions {
 
         // 4. If asset out is USDC, swap DAI  to USDC
         if (assetOut_ == USDC) {
-            amountOut_ = _swapDaiForUsdc(amountOut_, receiver_, minAmountOut_);
+            amountOut_ = _swapDaiForUsdc(amountOut_, receiver_);
         }
 
         require(amountOut_ >= minAmountOut_, "SUA:S:INSUFFICIENT_AMOUNT_OUT");
@@ -149,14 +149,13 @@ contract SyrupUserActions is ISyrupUserActions {
         daiOut_ = ISDaiLike(sDai).redeem(sdaiIn_, receiver_, address(this));
     }
 
-    function _swapDaiForUsdc(uint256 daiIn_, address receiver_, uint256 minUsdcOut_) internal returns (uint256 usdcOut_) {
+    function _swapDaiForUsdc(uint256 daiIn_, address receiver_) internal returns (uint256 usdcOut_) {
         IPSMLike psm_ = IPSMLike(psm);
         // Calculate the exact amount of gems we expect to receive given this amount of assets
         // We are reversing the calculation at
         // https://github.com/makerdao/dss-psm/blob/222c96d4047e76680ed6803f07dd61aa2590e42b/src/psm.sol#L121
         // Note: Due to rounding, this may leave dai dust in the contract
         usdcOut_ = daiIn_ * 1e18 / (PSM_PRECISION * (1e18 + psm_.tout()));
-        require(usdcOut_ >= minUsdcOut_, "SUA:SDU:INSUFFICIENT_AMOUNT_OUT");
         psm_.buyGem(receiver_, usdcOut_);
     }
 

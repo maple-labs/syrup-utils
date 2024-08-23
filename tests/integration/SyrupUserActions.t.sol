@@ -234,7 +234,7 @@ contract SwapToUsdcTestsWithLivePsm is SyrupUserActionsTestBase {
         vm.prank(account);
         syrupUsdc.approve(address(syrupUserActions), syrupUsdcIn);
 
-        vm.expectRevert("SUA:SDU:INSUFFICIENT_AMOUNT_OUT");
+        vm.expectRevert("SUA:S:INSUFFICIENT_AMOUNT_OUT");
         vm.prank(account);
         syrupUserActions.swapToUsdc(syrupUsdcIn, 100e6, receiver);
     }
@@ -253,7 +253,7 @@ contract SwapToUsdcTestsWithLivePsm is SyrupUserActionsTestBase {
             })
         );
 
-        vm.expectRevert("SUA:SDU:INSUFFICIENT_AMOUNT_OUT");
+        vm.expectRevert("SUA:S:INSUFFICIENT_AMOUNT_OUT");
         vm.prank(account);
         syrupUserActions.swapToUsdcWithPermit(syrupUsdcIn, 100e6, receiver, deadline, v, r, s);
     }

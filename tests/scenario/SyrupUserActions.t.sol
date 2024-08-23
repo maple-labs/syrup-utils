@@ -166,7 +166,7 @@ contract SyrupUserActionsScenarioTests is ScenarioTestBase {
 
         // Revert expected due to balancer fees
         vm.prank(account.addr);
-        vm.expectRevert("SUA:SDU:INSUFFICIENT_AMOUNT_OUT");
+        vm.expectRevert("SUA:S:INSUFFICIENT_AMOUNT_OUT");
         uint256 usdcOut = actions.swapToUsdc(syrupUsdcIn, expectedUsdcOut, account.addr);
 
         // Allow for 1% slippage.
