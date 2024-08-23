@@ -205,7 +205,7 @@ contract MockReenteringSdai {
     }
 
     fallback() external {
-        ISyrupUserActionsLike(target).swapToDai(0, 0, address(1));
+        ISyrupUserActionsLike(target).swapToDai(0, 0, block.timestamp, address(1));
     }
 
 }

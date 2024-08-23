@@ -77,7 +77,7 @@ interface IStakedSyrupLike {
 
 interface ISyrupUserActionsLike {
 
-    function swapToDai(uint256 syrupUsdcIn_, uint256 minDaiOut_, address receiver_) external returns (uint256 daiOut_);
+    function swapToDai(uint256 syrupUsdcIn_, uint256 minDaiOut_, uint256 swapDeadline, address receiver_) external returns (uint256 daiOut_);
 
 }
 

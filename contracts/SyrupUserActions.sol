@@ -53,53 +53,57 @@ contract SyrupUserActions is ISyrupUserActions {
     function swapToDai(
         uint256 syrupUsdcIn_,
         uint256 minDaiOut_,
+        uint256 swapDeadline_,
         address receiver_
     )
         external override nonReentrant returns (uint256 daiOut_)
     {
-        daiOut_ = _swap(syrupUsdcIn_, minDaiOut_, dai, receiver_);
+        daiOut_ = _swap(syrupUsdcIn_, minDaiOut_, swapDeadline_, dai, receiver_);
     }
 
     function swapToDaiWithPermit(
         uint256 syrupUsdcIn_,
         uint256 minDaiOut_,
+        uint256 swapDeadline_,
         address receiver_,
-        uint256 deadline_,
+        uint256 permitDeadline_,
         uint8   v_,
         bytes32 r_,
         bytes32 s_
     )
         external override nonReentrant returns (uint256 daiOut_)
     {
-        _permit(syrupUsdc, deadline_, syrupUsdcIn_, v_, r_, s_);
+        _permit(syrupUsdc, permitDeadline_, syrupUsdcIn_, v_, r_, s_);
 
-        daiOut_ = _swap(syrupUsdcIn_, minDaiOut_, dai, receiver_);
+        daiOut_ = _swap(syrupUsdcIn_, minDaiOut_, swapDeadline_, dai, receiver_);
     }
 
     function swapToUsdc(
         uint256 syrupUsdcIn_,
         uint256 minUsdcOut_,
+        uint256 swapDeadline_,
         address receiver_
     )
         external override nonReentrant returns (uint256 usdcOut_)
     {
-       usdcOut_ = _swap(syrupUsdcIn_, minUsdcOut_, USDC, receiver_);
+       usdcOut_ = _swap(syrupUsdcIn_, minUsdcOut_, swapDeadline_, USDC, receiver_);
     }
 
      function swapToUsdcWithPermit(
         uint256 syrupUsdcIn_,
         uint256 minUsdcOut_,
+        uint256 swapDeadline_,
         address receiver_,
-        uint256 deadline_,
+        uint256 permitDeadline_,
         uint8   v_,
         bytes32 r_,
         bytes32 s_
     )
         external override nonReentrant returns (uint256 usdcOut_)
     {
-        _permit(syrupUsdc, deadline_, syrupUsdcIn_, v_, r_, s_);
+        _permit(syrupUsdc, permitDeadline_, syrupUsdcIn_, v_, r_, s_);
 
-        usdcOut_ = _swap(syrupUsdcIn_, minUsdcOut_, USDC, receiver_);
+        usdcOut_ = _swap(syrupUsdcIn_, minUsdcOut_, swapDeadline_, USDC, receiver_);
     }
 
     /**************************************************************************************************************************************/
@@ -109,6 +113,7 @@ contract SyrupUserActions is ISyrupUserActions {
     function _swap(
         uint256 syrupUsdcIn_,
         uint256 minAmountOut_,
+        uint256 swapDeadline_,
         address assetOut_,
         address receiver_
     )
@@ -118,7 +123,7 @@ contract SyrupUserActions is ISyrupUserActions {
         require(ERC20Helper.transferFrom(syrupUsdc, msg.sender, address(this), syrupUsdcIn_), "SUA:S:TRANSFER_FROM_FAILED");
 
         // 2. Swap into sDAI
-        uint256 sdaiAmount_ = _swapViaBalancer(syrupUsdcIn_);
+        uint256 sdaiAmount_ = _swapViaBalancer(syrupUsdcIn_, swapDeadline_);
 
         // 3. Swap into DAI
         amountOut_ = _redeemForDai(sdaiAmount_, assetOut_ == USDC ? address(this) : receiver_);
@@ -159,7 +164,7 @@ contract SyrupUserActions is ISyrupUserActions {
         psm_.buyGem(receiver_, usdcOut_);
     }
 
-    function _swapViaBalancer(uint256 syrupUsdcIn_) internal returns (uint256 sdaiOut_) {
+    function _swapViaBalancer(uint256 syrupUsdcIn_, uint256 swapDeadline_) internal returns (uint256 sdaiOut_) {
         IBalancerVaultLike.FundManagement memory funds_ = IBalancerVaultLike.FundManagement({
             sender:              address(this),
             fromInternalBalance: false,
@@ -180,7 +185,7 @@ contract SyrupUserActions is ISyrupUserActions {
             singleSwap: swap_,
             funds:      funds_,
             limit:      0,
-            deadline:   block.timestamp
+            deadline:   swapDeadline_
         });
     }
 

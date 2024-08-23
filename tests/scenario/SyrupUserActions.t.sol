@@ -101,7 +101,7 @@ contract ScenarioTestBase is Test {
         syrupUsdc.approve(address(actions), syrupIn);
 
         vm.prank(actor);
-        usdcOut = actions.swapToUsdc(syrupIn, minUsdcOut, actor);
+        usdcOut = actions.swapToUsdc(syrupIn, minUsdcOut, block.timestamp, actor);
     }
 
     function updateBalancerLiquidity(address asset, int256 amount) internal {
@@ -154,6 +154,21 @@ contract ScenarioTestBase is Test {
 
 contract SyrupUserActionsScenarioTests is ScenarioTestBase {
 
+    function testScenario_swapDeadlineHasPassed() external {
+        mintSyrupUsdc(address(account.addr), syrupUsdcIn);
+
+        vm.prank(account.addr);
+        syrupUsdc.approve(address(actions), syrupUsdcIn);
+
+        uint256 priorTimestamp = block.timestamp;
+
+        vm.warp(priorTimestamp + 1 days);
+
+        vm.expectRevert("BAL#508");  // Error code for swap deadline https://docs.balancer.fi/reference/contracts/error-codes.html#vault
+        vm.prank(account.addr);
+        actions.swapToUsdc(syrupUsdcIn, 100e6, priorTimestamp, account.addr);
+    }
+
     function test_scenario_insufficientSlippage() external {
         // Update Balancer Liquidity
         updateBalancerLiquidity(SYRUP_USDC, 100_000e6);
@@ -167,13 +182,13 @@ contract SyrupUserActionsScenarioTests is ScenarioTestBase {
         // Revert expected due to balancer fees
         vm.prank(account.addr);
         vm.expectRevert("SUA:S:INSUFFICIENT_AMOUNT_OUT");
-        uint256 usdcOut = actions.swapToUsdc(syrupUsdcIn, expectedUsdcOut, account.addr);
+        uint256 usdcOut = actions.swapToUsdc(syrupUsdcIn, expectedUsdcOut, block.timestamp, account.addr);
 
         // Allow for 1% slippage.
         uint256 adjustedUsdcOut = expectedUsdcOut * 0.99e18 / 1e18;
 
         vm.prank(account.addr);
-        usdcOut = actions.swapToUsdc(syrupUsdcIn, adjustedUsdcOut, account.addr);
+        usdcOut = actions.swapToUsdc(syrupUsdcIn, adjustedUsdcOut, block.timestamp, account.addr);
 
         assertGt(usdcOut, adjustedUsdcOut);
     }
@@ -353,7 +368,7 @@ contract SyrupUserActionsScenarioTests is ScenarioTestBase {
 
         vm.prank(account.addr);
         vm.expectRevert("ERC20: transfer amount exceeds balance");
-        usdcOut = actions.swapToUsdc(syrupUsdcIn, 0, account.addr);
+        usdcOut = actions.swapToUsdc(syrupUsdcIn, 0, block.timestamp, account.addr);
     }
 
     // NOTE: Purpose of the test is to find edge cases where the contract may revert.

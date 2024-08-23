@@ -136,7 +136,7 @@ contract SwapToUsdcTestsWithLivePsm is SyrupUserActionsTestBase {
 
     function testFork_swapToUsdc_noApproval() external {
         vm.expectRevert("SUA:S:TRANSFER_FROM_FAILED");
-        syrupUserActions.swapToUsdc(syrupUsdcIn, 0, receiver);
+        syrupUserActions.swapToUsdc(syrupUsdcIn, 0, block.timestamp, receiver);
     }
 
     function testFork_swapToUsdcWithPermit_expired() external {
@@ -155,7 +155,7 @@ contract SwapToUsdcTestsWithLivePsm is SyrupUserActionsTestBase {
 
         vm.expectRevert("ERC20:P:EXPIRED");
         vm.prank(account);
-        syrupUserActions.swapToUsdcWithPermit(syrupUsdcIn, 0, receiver, deadline, v, r, s);
+        syrupUserActions.swapToUsdcWithPermit(syrupUsdcIn, 0, block.timestamp, receiver, deadline, v, r, s);
     }
 
     function testFork_swapToUsdcWithPermit_invalidSignatureDueToInvalidNonce() external {
@@ -174,7 +174,7 @@ contract SwapToUsdcTestsWithLivePsm is SyrupUserActionsTestBase {
 
         vm.expectRevert("ERC20:P:INVALID_SIGNATURE");
         vm.prank(account);
-        syrupUserActions.swapToUsdcWithPermit(syrupUsdcIn, 0, receiver, deadline, v, r, s);
+        syrupUserActions.swapToUsdcWithPermit(syrupUsdcIn, 0, block.timestamp, receiver, deadline, v, r, s);
     }
 
     function testFork_swapToUsdcWithPermit_insufficientPermitAmount() external {
@@ -193,7 +193,7 @@ contract SwapToUsdcTestsWithLivePsm is SyrupUserActionsTestBase {
 
         vm.expectRevert("ERC20:P:INVALID_SIGNATURE");
         vm.prank(account);
-        syrupUserActions.swapToUsdcWithPermit(syrupUsdcIn, 0, receiver, deadline, v, r, s);
+        syrupUserActions.swapToUsdcWithPermit(syrupUsdcIn, 0, block.timestamp, receiver, deadline, v, r, s);
     }
 
     function testFork_swapToUsdc_insufficientBalance() external {
@@ -203,7 +203,7 @@ contract SwapToUsdcTestsWithLivePsm is SyrupUserActionsTestBase {
         syrupUsdc.approve(address(syrupUserActions), syrupUsdcIn);
 
         vm.expectRevert("SUA:S:TRANSFER_FROM_FAILED");
-        syrupUserActions.swapToUsdc(syrupUsdcIn, 0, receiver);
+        syrupUserActions.swapToUsdc(syrupUsdcIn, 0, block.timestamp, receiver);
     }
 
     function testFork_swapToUsdcWithPermit_insufficientBalance() external {
@@ -225,7 +225,7 @@ contract SwapToUsdcTestsWithLivePsm is SyrupUserActionsTestBase {
 
         vm.expectRevert("SUA:S:TRANSFER_FROM_FAILED");
         vm.prank(account);
-        syrupUserActions.swapToUsdcWithPermit(syrupUsdcIn, 0, receiver, deadline, v, r, s);
+        syrupUserActions.swapToUsdcWithPermit(syrupUsdcIn, 0, block.timestamp, receiver, deadline, v, r, s);
     }
 
     function testFork_swapToUsdc_notEnoughOut() external {
@@ -236,7 +236,7 @@ contract SwapToUsdcTestsWithLivePsm is SyrupUserActionsTestBase {
 
         vm.expectRevert("SUA:S:INSUFFICIENT_AMOUNT_OUT");
         vm.prank(account);
-        syrupUserActions.swapToUsdc(syrupUsdcIn, 100e6, receiver);
+        syrupUserActions.swapToUsdc(syrupUsdcIn, 100e6, block.timestamp, receiver);
     }
 
     function testFork_swapToUsdcWithPermit_notEnoughOut() external {
@@ -255,7 +255,7 @@ contract SwapToUsdcTestsWithLivePsm is SyrupUserActionsTestBase {
 
         vm.expectRevert("SUA:S:INSUFFICIENT_AMOUNT_OUT");
         vm.prank(account);
-        syrupUserActions.swapToUsdcWithPermit(syrupUsdcIn, 100e6, receiver, deadline, v, r, s);
+        syrupUserActions.swapToUsdcWithPermit(syrupUsdcIn, 100e6, block.timestamp, receiver, deadline, v, r, s);
     }
 
     function testFork_swapToUsdc_reentrancy() external {
@@ -269,7 +269,7 @@ contract SwapToUsdcTestsWithLivePsm is SyrupUserActionsTestBase {
 
         vm.expectRevert("SUA:LOCKED");
         vm.prank(account);
-        syrupUserActions.swapToUsdc(syrupUsdcIn, 0, receiver);
+        syrupUserActions.swapToUsdc(syrupUsdcIn, 0, block.timestamp, receiver);
     }
 
     function testFork_swapToUsdcWithPermit_reentrancy() external {
@@ -293,7 +293,7 @@ contract SwapToUsdcTestsWithLivePsm is SyrupUserActionsTestBase {
 
         vm.expectRevert("SUA:LOCKED");
         vm.prank(account);
-        syrupUserActions.swapToUsdcWithPermit(syrupUsdcIn, 0, receiver, block.timestamp, v, r, s);
+        syrupUserActions.swapToUsdcWithPermit(syrupUsdcIn, 0, block.timestamp, receiver, block.timestamp, v, r, s);
     }
 
     function testFork_swapToUsdc_success() public {
@@ -316,7 +316,7 @@ contract SwapToUsdcTestsWithLivePsm is SyrupUserActionsTestBase {
         emit Swap(account, receiver, SYRUP_USDC, syrupUsdcIn, USDC, 1.001996e6);
 
         vm.prank(account);
-        uint256 usdcOut = syrupUserActions.swapToUsdc(syrupUsdcIn, minOutput, receiver);
+        uint256 usdcOut = syrupUserActions.swapToUsdc(syrupUsdcIn, minOutput, block.timestamp, receiver);
 
         assertEq(syrupUsdc.balanceOf(address(account)),          0);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
@@ -349,7 +349,7 @@ contract SwapToUsdcTestsWithLivePsm is SyrupUserActionsTestBase {
         emit Swap(account, account, SYRUP_USDC, syrupUsdcIn, USDC, 1.001996e6);
 
         vm.prank(account);
-        uint256 usdcOut = syrupUserActions.swapToUsdc(syrupUsdcIn, minOutput, account);
+        uint256 usdcOut = syrupUserActions.swapToUsdc(syrupUsdcIn, minOutput, block.timestamp, account);
 
         assertEq(syrupUsdc.balanceOf(address(account)),          0);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
@@ -391,7 +391,7 @@ contract SwapToUsdcTestsWithLivePsm is SyrupUserActionsTestBase {
         emit Swap(account, receiver, SYRUP_USDC, syrupUsdcIn, USDC, 1.001996e6);
 
         vm.prank(account);
-        uint256 usdcOut = syrupUserActions.swapToUsdcWithPermit(syrupUsdcIn, minOutput, receiver, deadline, v, r, s);
+        uint256 usdcOut = syrupUserActions.swapToUsdcWithPermit(syrupUsdcIn, minOutput, block.timestamp, receiver, deadline, v, r, s);
 
         assertEq(syrupUsdc.balanceOf(address(account)),          0);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
@@ -433,7 +433,7 @@ contract SwapToUsdcTestsWithLivePsm is SyrupUserActionsTestBase {
         emit Swap(account, account, SYRUP_USDC, syrupUsdcIn, USDC, 1.001996e6);
 
         vm.prank(account);
-        uint256 usdcOut = syrupUserActions.swapToUsdcWithPermit(syrupUsdcIn, minOutput, account, deadline, v, r, s);
+        uint256 usdcOut = syrupUserActions.swapToUsdcWithPermit(syrupUsdcIn, minOutput, block.timestamp, account, deadline, v, r, s);
 
         assertEq(syrupUsdc.balanceOf(address(account)),          0);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
@@ -467,7 +467,7 @@ contract SwapToUsdcTestsWithLivePsm is SyrupUserActionsTestBase {
         assertEq(usdc.balanceOf(GEM_JOIN),                  usdcBalance);
 
         vm.prank(account);
-        uint256 usdcOut = syrupUserActions.swapToUsdc(syrupUsdcIn, minOutput, receiver);
+        uint256 usdcOut = syrupUserActions.swapToUsdc(syrupUsdcIn, minOutput, block.timestamp, receiver);
 
         assertEq(syrupUsdc.balanceOf(address(account)),          0);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
@@ -511,7 +511,7 @@ contract SwapToUsdcTestsWithLivePsm is SyrupUserActionsTestBase {
         assertEq(usdc.balanceOf(GEM_JOIN),                  usdcBalance);
 
         vm.prank(account);
-        uint256 usdcOut = syrupUserActions.swapToUsdc(syrupUsdcIn, minUsdcOut, receiver);
+        uint256 usdcOut = syrupUserActions.swapToUsdc(syrupUsdcIn, minUsdcOut, block.timestamp, receiver);
 
         assertEq(syrupUsdc.balanceOf(address(account)),          0);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
@@ -559,7 +559,7 @@ contract SwapToUsdcTestsWithLivePsm is SyrupUserActionsTestBase {
         assertEq(usdc.balanceOf(GEM_JOIN),                  usdcBalance);
 
         vm.prank(account);
-        uint256 usdcOut = syrupUserActions.swapToUsdcWithPermit(syrupUsdcIn, minUsdcOut, receiver, deadline, v, r, s);
+        uint256 usdcOut = syrupUserActions.swapToUsdcWithPermit(syrupUsdcIn, minUsdcOut, block.timestamp, receiver, deadline, v, r, s);
 
         assertEq(syrupUsdc.balanceOf(address(account)),          0);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
@@ -586,7 +586,7 @@ contract SwapToDaiTestsWithLivePsm is SyrupUserActionsTestBase {
 
     function testFork_swapToDai_noApproval() external {
         vm.expectRevert("SUA:S:TRANSFER_FROM_FAILED");
-        syrupUserActions.swapToDai(syrupUsdcIn, 0, receiver);
+        syrupUserActions.swapToDai(syrupUsdcIn, 0, block.timestamp, receiver);
     }
 
     function testFork_swapToDaiWithPermit_expired() external {
@@ -605,7 +605,7 @@ contract SwapToDaiTestsWithLivePsm is SyrupUserActionsTestBase {
 
         vm.expectRevert("ERC20:P:EXPIRED");
         vm.prank(account);
-        syrupUserActions.swapToDaiWithPermit(syrupUsdcIn, 0, receiver, deadline, v, r, s);
+        syrupUserActions.swapToDaiWithPermit(syrupUsdcIn, 0, block.timestamp, receiver, deadline, v, r, s);
     }
 
     function testFork_swapToDaiWithPermit_invalidSignatureDueToInvalidNonces() external {
@@ -624,7 +624,7 @@ contract SwapToDaiTestsWithLivePsm is SyrupUserActionsTestBase {
 
         vm.expectRevert("ERC20:P:INVALID_SIGNATURE");
         vm.prank(account);
-        syrupUserActions.swapToDaiWithPermit(syrupUsdcIn, 0, receiver, deadline, v, r, s);
+        syrupUserActions.swapToDaiWithPermit(syrupUsdcIn, 0, block.timestamp, receiver, deadline, v, r, s);
     }
 
     function testFork_swapToDaiWithPermit_insufficientPermitAmount() external {
@@ -643,7 +643,7 @@ contract SwapToDaiTestsWithLivePsm is SyrupUserActionsTestBase {
 
         vm.expectRevert("ERC20:P:INVALID_SIGNATURE");
         vm.prank(account);
-        syrupUserActions.swapToDaiWithPermit(syrupUsdcIn, 0, receiver, deadline, v, r, s);
+        syrupUserActions.swapToDaiWithPermit(syrupUsdcIn, 0, block.timestamp, receiver, deadline, v, r, s);
     }
 
     function testFork_swapToDai_insufficientBalance() external {
@@ -652,7 +652,7 @@ contract SwapToDaiTestsWithLivePsm is SyrupUserActionsTestBase {
         syrupUsdc.approve(address(syrupUserActions), syrupUsdcIn);
 
         vm.expectRevert("SUA:S:TRANSFER_FROM_FAILED");
-        syrupUserActions.swapToDai(syrupUsdcIn, 0, receiver);
+        syrupUserActions.swapToDai(syrupUsdcIn, 0, block.timestamp, receiver);
     }
 
     function testFork_swapToDaiWithPermit_insufficientBalance() external {
@@ -673,7 +673,7 @@ contract SwapToDaiTestsWithLivePsm is SyrupUserActionsTestBase {
 
         vm.expectRevert("SUA:S:TRANSFER_FROM_FAILED");
         vm.prank(account);
-        syrupUserActions.swapToDaiWithPermit(syrupUsdcIn, 0, receiver, deadline, v, r, s);
+        syrupUserActions.swapToDaiWithPermit(syrupUsdcIn, 0, block.timestamp, receiver, deadline, v, r, s);
     }
 
     function testFork_swapToDai_notEnoughOut() external {
@@ -682,7 +682,7 @@ contract SwapToDaiTestsWithLivePsm is SyrupUserActionsTestBase {
 
         vm.expectRevert("SUA:S:INSUFFICIENT_AMOUNT_OUT");
         vm.prank(account);
-        syrupUserActions.swapToDai(syrupUsdcIn, 100e18, receiver);
+        syrupUserActions.swapToDai(syrupUsdcIn, 100e18, block.timestamp, receiver);
     }
 
     function testFork_swapToDaiWithPermit_notEnoughOut() external {
@@ -701,7 +701,7 @@ contract SwapToDaiTestsWithLivePsm is SyrupUserActionsTestBase {
 
         vm.expectRevert("SUA:S:INSUFFICIENT_AMOUNT_OUT");
         vm.prank(account);
-        syrupUserActions.swapToDaiWithPermit(syrupUsdcIn, 100e18, receiver, deadline, v, r, s);
+        syrupUserActions.swapToDaiWithPermit(syrupUsdcIn, 100e18, block.timestamp, receiver, deadline, v, r, s);
     }
 
     function testFork_swapToDai_reentrancy() external {
@@ -715,7 +715,7 @@ contract SwapToDaiTestsWithLivePsm is SyrupUserActionsTestBase {
 
         vm.expectRevert("SUA:LOCKED");
         vm.prank(account);
-        syrupUserActions.swapToDai(syrupUsdcIn, 0, receiver);
+        syrupUserActions.swapToDai(syrupUsdcIn, 0, block.timestamp, receiver);
     }
 
     function testFork_swapToDaiWithPermit_reentrancy() external {
@@ -739,7 +739,7 @@ contract SwapToDaiTestsWithLivePsm is SyrupUserActionsTestBase {
 
         vm.expectRevert("SUA:LOCKED");
         vm.prank(account);
-        syrupUserActions.swapToDaiWithPermit(syrupUsdcIn, 0, receiver, block.timestamp, v, r, s);
+        syrupUserActions.swapToDaiWithPermit(syrupUsdcIn, 0, block.timestamp, receiver, block.timestamp, v, r, s);
     }
 
     function testFork_swapToDai_success() public {
@@ -765,7 +765,7 @@ contract SwapToDaiTestsWithLivePsm is SyrupUserActionsTestBase {
         emit Swap(account, receiver, SYRUP_USDC, syrupUsdcIn, DAI, 1.001996538096073486e18);
 
         vm.prank(account);
-        uint256 daiOut = syrupUserActions.swapToDai(syrupUsdcIn, minDaiOut, receiver);
+        uint256 daiOut = syrupUserActions.swapToDai(syrupUsdcIn, minDaiOut, block.timestamp, receiver);
 
         assertEq(syrupUsdc.balanceOf(address(account)),          0);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
@@ -804,7 +804,7 @@ contract SwapToDaiTestsWithLivePsm is SyrupUserActionsTestBase {
         emit Swap(account, account, SYRUP_USDC, syrupUsdcIn, DAI, 1.001996538096073486e18);
 
         vm.prank(account);
-        uint256 daiOut = syrupUserActions.swapToDai(syrupUsdcIn, minDaiOut, account);
+        uint256 daiOut = syrupUserActions.swapToDai(syrupUsdcIn, minDaiOut, block.timestamp, account);
 
         assertEq(syrupUsdc.balanceOf(address(account)),          0);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
@@ -852,7 +852,7 @@ contract SwapToDaiTestsWithLivePsm is SyrupUserActionsTestBase {
         emit Swap(account, receiver, SYRUP_USDC, syrupUsdcIn, DAI, 1.001996538096073486e18);
 
         vm.prank(account);
-        uint256 daiOut = syrupUserActions.swapToDaiWithPermit(syrupUsdcIn, minDaiOut, receiver, deadline, v, r, s);
+        uint256 daiOut = syrupUserActions.swapToDaiWithPermit(syrupUsdcIn, minDaiOut, block.timestamp, receiver, deadline, v, r, s);
 
         assertEq(syrupUsdc.balanceOf(address(account)),          0);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
@@ -900,7 +900,7 @@ contract SwapToDaiTestsWithLivePsm is SyrupUserActionsTestBase {
         emit Swap(account, account, SYRUP_USDC, syrupUsdcIn, DAI, 1.001996538096073486e18);
 
         vm.prank(account);
-        uint256 daiOut = syrupUserActions.swapToDaiWithPermit(syrupUsdcIn, minDaiOut, account, deadline, v, r, s);
+        uint256 daiOut = syrupUserActions.swapToDaiWithPermit(syrupUsdcIn, minDaiOut, block.timestamp, account, deadline, v, r, s);
 
         assertEq(syrupUsdc.balanceOf(address(account)),          0);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
@@ -943,7 +943,7 @@ contract SwapToDaiTestsWithLivePsm is SyrupUserActionsTestBase {
         assertEq(dai.totalSupply(), daiSupply);
 
         vm.prank(account);
-        uint256 daiOut = syrupUserActions.swapToDai(syrupUsdcIn, minDaiOut, receiver);
+        uint256 daiOut = syrupUserActions.swapToDai(syrupUsdcIn, minDaiOut, block.timestamp, receiver);
 
         assertEq(syrupUsdc.balanceOf(address(account)),          0);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
@@ -992,7 +992,7 @@ contract SwapToDaiTestsWithLivePsm is SyrupUserActionsTestBase {
         assertEq(dai.balanceOf(address(syrupUserActions)),       0);
 
         vm.prank(account);
-        uint256 daiOut = syrupUserActions.swapToDaiWithPermit(syrupUsdcIn, minDaiOut, receiver, deadline, v, r, s);
+        uint256 daiOut = syrupUserActions.swapToDaiWithPermit(syrupUsdcIn, minDaiOut, block.timestamp, receiver, deadline, v, r, s);
 
         assertEq(syrupUsdc.balanceOf(address(account)),          0);
         assertEq(syrupUsdc.balanceOf(address(syrupUserActions)), 0);
