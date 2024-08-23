@@ -19,7 +19,7 @@ contract SyrupUserActions is ISyrupUserActions {
     address public immutable override sDai;
     address public immutable override syrupUsdc;
 
-    bytes32 public immutable  override poolId;
+    bytes32 public immutable override poolId;
 
     uint256 internal _locked;
 
@@ -123,7 +123,7 @@ contract SyrupUserActions is ISyrupUserActions {
         // 3. Swap into DAI
         amountOut_ = _redeemForDai(sdaiAmount_, assetOut_ == USDC ? address(this) : receiver_);
 
-        // 4. If asset out is USDC, swap DAI  to USDC
+        // 4. If asset out is USDC, swap DAI to USDC
         if (assetOut_ == USDC) {
             amountOut_ = _swapDaiForUsdc(amountOut_, receiver_);
         }
