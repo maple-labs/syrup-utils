@@ -43,11 +43,10 @@ describe('generateReport tests', () => {
     )
 
     expect(report).toEqual({
-      name: 'Test allocation',
-      description: null,
+      name: 'allocation-2024-08',
       merkleRoot: '0xfcbe1f06eb99ffd8d9f10473340acdc7301ca858eae5d58690cb050bc696c2ed',
       maximumId: 1342,
-      deadline: null,
+      deadline: 1725148799,
       allocations: [
         {
           id: 1338,

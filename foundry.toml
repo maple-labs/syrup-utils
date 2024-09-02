@@ -7,6 +7,7 @@ auto_detect_solc = true           # Automatically detect the solc version
 verbosity        = 3              # The verbosity of tests
 block_timestamp  = 1_622_400_000  # Timestamp for tests (non-zero)
 evm_version      = 'shanghai'     # EVM version to use
+fs_permissions   = [{ access = "read", path = "./"}]
 
 [profile.default.fuzz]
 runs = 1_000  # Number of fuzz runs

@@ -43,5 +43,5 @@ export async function parseAllocation(row: string, id: number): Promise<Allocati
 
     // TODO: Verify if `id` appears in any other previous allocation file.
 
-    return { id, address, amount, proof: [] }
+    return { address, amount, id, proof: [] }
 }

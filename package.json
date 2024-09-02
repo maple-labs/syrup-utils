@@ -6,8 +6,9 @@
     "node": ">=18.16"
   },
   "scripts": {
-    "generate": "ts-node scripts/allocation-generator/main.ts",
-    "test": "jest scripts/allocation-generator"
+    "generate": "source .env && ETH_RPC_URL=$ETH_RPC_URL SYRUP_DRIP=$SYRUP_DRIP ts-node scripts/allocation-generator/main.ts",
+    "test": "jest scripts/allocation-generator",
+    "validate": "./scripts/validate.sh"
   },
   "dependencies": {
     "@openzeppelin/merkle-tree": "^1.0.7",
