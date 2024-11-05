@@ -5,7 +5,7 @@ import { ERC20Helper } from "../modules/erc20-helper/src/ERC20Helper.sol";
 import { MerkleProof } from "../modules/open-zeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 import { IGlobalsLike, IStakedSyrupLike } from "./interfaces/Interfaces.sol";
-import { ISyrupDrip }   from "./interfaces/ISyrupDrip.sol";
+import { ISyrupDrip }                     from "./interfaces/ISyrupDrip.sol";
 
 contract SyrupDrip is ISyrupDrip {
 

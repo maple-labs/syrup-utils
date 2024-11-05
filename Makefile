@@ -9,3 +9,6 @@ test:
 
 deploy:
 	@scripts/deploy.sh
+
+validate:
+	@FOUNDRY_PROFILE=production forge script Validate$(step)

@@ -11,23 +11,24 @@ echo Using profile: $FOUNDRY_PROFILE
 # For Testing
 
 # For Router Deployment
-forge script \
-    --rpc-url $ETH_RPC_URL \
-    -vvvv \
-    --unlocked \
-    --slow \
-    --sender "$ETH_SENDER" \
-    scripts/DeployRouter.s.sol:DeployRouter
-   
+# forge script \
+#     --rpc-url $ETH_RPC_URL \
+#     -vvvv \
+#     --unlocked \
+#     --slow \
+#     --sender "$ETH_SENDER" \
+#     scripts/DeployRouter.s.sol:DeployRouter
+
 # For Drips and Actions deployment
 forge script \
     --rpc-url $ETH_RPC_URL \
     -vvvv \
     --unlocked \
     --slow \
+    --broadcast \
     --sender "$ETH_SENDER" \
     scripts/DripsAndActionsDeployment.s.sol:DeploySyrupDripsAndActions
-  
+
 # Production
 
 # For Router Deployment
@@ -46,7 +47,7 @@ forge script \
 # forge script \
 #     --rpc-url $ETH_RPC_URL \
 #     -vvvv \
-#     --mnemonic-indexes 2 \
+#     --mnemonic-indexes 13 \
 #     --ledger \
 #     --slow \
 #     --sender $ETH_SENDER \
