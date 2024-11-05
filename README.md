@@ -40,7 +40,7 @@ This project was built using [Foundry](https://book.getfoundry.sh/). Refer to in
 
 ```sh
 git clone git@github.com:maple-labs/syrup-utils.git
-cd syrup-utils-private
+cd syrup-utils
 forge install
 ```
 
