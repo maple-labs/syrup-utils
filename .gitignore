@@ -15,9 +15,24 @@ lcov*
 !/broadcast
 /broadcast/*/31337/
 /broadcast/**/dry-run/
+/broadcast/*
 
 # Docs
 docs/
 
 # Dotenv file
 .env
+
+# Yarn
+node_modules
+dist
+coverage
+
+# Yarn 3 / Berry
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions

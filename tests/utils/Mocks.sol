@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity 0.8.7;
+pragma solidity ^0.8.0;
 
 import { MockERC20 as BaseMockERC20 } from "../../modules/erc20/contracts/test/mocks/MockERC20.sol";
+
+import { ISyrupUserActionsLike } from "./Interfaces.sol";
 
 contract MockERC20 is BaseMockERC20 {
 
@@ -43,6 +45,40 @@ contract MockERC20 is BaseMockERC20 {
 
     function permit(address owner_, address spender_, uint amount_, uint deadline_, uint8 v_, bytes32 r_, bytes32 s_) public override {
         super.permit(owner_, spender_, amount_, deadline_, v_, r_, s_);
+    }
+
+}
+
+contract MockGlobals {
+
+    address public governor;
+    address public operationalAdmin;
+
+    constructor(address governor_, address operationalAdmin_) {
+        governor = governor_;
+        operationalAdmin = operationalAdmin_;
+    }
+
+}
+
+contract MockMigrator {
+
+    MockERC20 _mpl;
+    MockERC20 _syrup;
+
+    uint256 _scalar;
+
+    constructor(MockERC20 mpl, MockERC20 syrup, uint256 scalar) {
+        _mpl    = mpl;
+        _syrup  = syrup;
+        _scalar = scalar;
+    }
+
+    function migrate(address owner_, uint256 mplAmount_) external returns (uint256 syrupAmount_) {
+        syrupAmount_ = mplAmount_ * _scalar;
+
+        _mpl.transferFrom(msg.sender, address(this), mplAmount_);
+        _syrup.mint(owner_, syrupAmount_);
     }
 
 }
@@ -131,6 +167,45 @@ contract MockPoolPermissionManager {
 
     function setLenderBitmaps(address[] calldata, uint256[] calldata ) external {
         // do nothing
+    }
+
+}
+
+// TODO: Add a scalar when converting assets to shares and vice versa (for fuzz testing with different exchange rates).
+contract MockRDT is BaseMockERC20 {
+
+    address public asset;
+
+    constructor(string memory name_, string memory symbol_, uint8 decimals_, MockERC20 asset_) BaseMockERC20(name_, symbol_, decimals_) {
+        asset = address(asset_);
+    }
+
+    function deposit(uint256 assets_, address receiver_) external returns (uint256 shares_) {
+        shares_ = assets_;
+
+        MockERC20(asset).transferFrom(msg.sender, address(this), assets_);
+        _mint(receiver_, shares_);
+    }
+
+    function redeem(uint256 shares_, address receiver_, address owner_) external returns (uint256 assets_) {
+        assets_ = shares_;
+
+        _burn(owner_, shares_);
+        MockERC20(asset).transfer(receiver_, assets_);
+    }
+
+}
+
+contract MockReenteringSdai {
+
+    address immutable target;
+
+    constructor(address target_) {
+        target = target_;
+    }
+
+    fallback() external {
+        ISyrupUserActionsLike(target).swapToDai(0, 0, block.timestamp, address(1));
     }
 
 }

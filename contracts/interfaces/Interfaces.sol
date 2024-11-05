@@ -1,9 +1,44 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity 0.8.7;
+pragma solidity ^0.8.0;
+
+interface IBalancerVaultLike {
+
+    enum SwapKind { GIVEN_IN, GIVEN_OUT }
+
+    struct FundManagement {
+        address sender;
+        bool fromInternalBalance;
+        address recipient;
+        bool toInternalBalance;
+    }
+
+    struct SingleSwap {
+        bytes32 poolId;
+        SwapKind kind;
+        address assetIn;
+        address assetOut;
+        uint256 amount;
+        bytes userData;
+    }
+
+    function swap(
+        SingleSwap calldata singleSwap,
+        FundManagement calldata funds,
+        uint256 limit,
+        uint256 deadline
+    ) external returns (uint256 assetDelta);
+
+}
 
 interface IERC20Like {
 
     function allowance(address owner, address spender) external view returns (uint256 allowance);
+
+    function balanceOf(address account) external view returns (uint256 balance);
+
+    function DOMAIN_SEPARATOR() external view returns (bytes32 domainSeparator);
+
+    function PERMIT_TYPEHASH() external view returns (bytes32 permitTypehash);
 
     function approve(address spender, uint256 amount) external returns (bool success);
 
@@ -12,6 +47,20 @@ interface IERC20Like {
     function transfer(address recipient, uint256 amount) external returns (bool success);
 
     function transferFrom(address owner, address recipient, uint256 amount) external returns (bool success);
+
+}
+
+interface IGlobalsLike {
+
+    function governor() external view returns (address governor);
+
+    function operationalAdmin() external view returns (address operationalAdmin);
+
+}
+
+interface IMigratorLike {
+
+    function migrate(address receiver, uint256 mplAmount) external returns (uint256 syrupAmount);
 
 }
 
@@ -40,5 +89,35 @@ interface IPoolPermissionManagerLike {
     function permissionAdmins(address account) external view returns (bool isAdmin);
 
     function setLenderBitmaps(address[] calldata lenders, uint256[] calldata bitmaps) external;
+
+}
+
+interface IPSMLike {
+
+    function buyGem(address account, uint256 daiAmount) external;
+
+    function tout() external view returns (uint256 tout);  // This is the fee charged for conversion
+
+}
+
+interface ISDaiLike {
+
+    function redeem(uint256 shares, address receiver, address owner) external returns (uint256 assets);
+
+}
+
+interface IRDTLike {
+
+    function asset() external view returns (address asset);
+
+    function deposit(uint256 assets, address receiver) external returns (uint256 shares);
+
+    function redeem(uint256 shares, address receiver, address owner) external returns (uint256 assets);
+
+}
+
+interface IStakedSyrupLike {
+
+    function deposit(uint256 assets, address receiver) external returns (uint256 shares);
 
 }

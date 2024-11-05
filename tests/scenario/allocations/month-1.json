@@ -1,0 +1,56 @@
+{
+  "name": "Month 2",
+  "description": null,
+  "merkleRoot": "0xbda372a36362be11b0ff01e3315d3ad00b11a562ee5047aaf6d8a6678c3d78c5",
+  "maximumId": 4,
+  "deadline": 1624992000,
+  "allocations": [
+    {
+      "id": 0,
+      "address": "0x343553366dA8546fc252aa25Fe3D25E1c782303B",
+      "amount": "3200000000000000000",
+      "proof": [
+        "0x44662f79fc38cb81708f0117770f8909d2fbab561fbe79a1bada69532af7ca35",
+        "0xea9c918a8885f0bfd64f98fbb47cb6fe4fd3cd2c27dc574ce5b55c942e5fdbe8",
+        "0x881d714b0c795ea64b0f1824b7af092e2ce7830ece5dbfa06d79d3e3ecf532e1"
+      ]
+    },
+    {
+      "id": 1,
+      "address": "0xccccCCccCb2DdddD3a882b2e9dF5357c2D892AdA",
+      "amount": "150000000000000000000",
+      "proof": [
+        "0x7470ac23e480005ebe99167bb4c6f114715b8b67ec2d19a94947cb571ae2f9a6",
+        "0xad7048a7b9237dd3668a2650fca9fcfd06f0ead4e6cc944eb223c69816525021"
+      ]
+    },
+    {
+      "id": 2,
+      "address": "0xe1cC612EcB2E854Efff82B0F9Cf5357c2D892adb",
+      "amount": "3300000000000000000",
+      "proof": [
+        "0x88a3dc0111ed0e005aafd907a5c20e0df45ea914adcaec8fc40234baa3ccb562",
+        "0xad7048a7b9237dd3668a2650fca9fcfd06f0ead4e6cc944eb223c69816525021"
+      ]
+    },
+    {
+      "id": 3,
+      "address": "0x78C750a323169BD762a06567CaAD02A8E680e7b3",
+      "amount": "11700000000000000000",
+      "proof": [
+        "0xb31398d9df107913c267109e5e8ef660a8759a358130ad2b9fe54d1930b41f88",
+        "0x881d714b0c795ea64b0f1824b7af092e2ce7830ece5dbfa06d79d3e3ecf532e1"
+      ]
+    },
+    {
+      "id": 4,
+      "address": "0x1642812ECb2E853d3A882b0F9cf5357c2D892ADC",
+      "amount": "2100000000000000000",
+      "proof": [
+        "0x684b3a36f19fbebbf04009b34bfa0fe82a053e7b751b1e4844a5098e4e755426",
+        "0xea9c918a8885f0bfd64f98fbb47cb6fe4fd3cd2c27dc574ce5b55c942e5fdbe8",
+        "0x881d714b0c795ea64b0f1824b7af092e2ce7830ece5dbfa06d79d3e3ecf532e1"
+      ]
+    }
+  ]
+}

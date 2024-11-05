@@ -6,3 +6,9 @@ coverage:
 
 test:
 	@scripts/test.sh -p default
+
+deploy:
+	@scripts/deploy.sh
+
+validate:
+	@FOUNDRY_PROFILE=production forge script Validate$(step)

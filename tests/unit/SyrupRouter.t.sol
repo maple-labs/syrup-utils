@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity 0.8.7;
+pragma solidity ^0.8.0;
 
 import { console2 as console, Test, Vm } from "../../modules/forge-std/src/Test.sol";
 
@@ -454,7 +454,13 @@ contract SyrupRouterTests is Test {
     /*** Helpers                                                                                                                        ***/
     /**************************************************************************************************************************************/
 
-    function _getPermitDigest(address owner_, address spender_, uint256 value_, uint256 nonce_, uint256 deadline_)
+    function _getPermitDigest(
+        address owner_,
+        address spender_,
+        uint256 value_,
+        uint256 nonce_,
+        uint256 deadline_
+    )
         internal view returns (bytes32 digest_)
     {
         return keccak256(
@@ -466,7 +472,12 @@ contract SyrupRouterTests is Test {
         );
     }
 
-    function _getAuthDigest(address router_, address owner_, uint256 bitmap_, uint256 deadline_)
+    function _getAuthDigest(
+        address router_,
+        address owner_,
+        uint256 bitmap_,
+        uint256 deadline_
+    )
         internal view returns (bytes32 digest_)
     {
         return keccak256(abi.encodePacked(
