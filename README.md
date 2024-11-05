@@ -11,9 +11,9 @@
 ## Overview
 
 This repository contains utility contracts that are used as part of Maple's permissionless offering Syrup. This include:
-| Path                         | Description | 
+| Path                         | Description |
 |------------------------------|--------------------|
-| `contracts/SyrupDrip.sol` | Merkle Tree based airdrop distributor | 
+| `contracts/SyrupDrip.sol` | Merkle Tree based airdrop distributor |
 | `contracts/SyrupUserActions.sol` | Convenience contract for users to swap directly to USDC / DAI |
 | `contracts/MplUserActions.sol` | Convenience contract for users to migrate to Syrup / stSyrup |
 | `contracts/SyrupRouter.sol` | Router that allows deposits into a Maple Pool |
@@ -48,7 +48,9 @@ forge install
 
 | Auditor | Report link |
 |---|---|
-| ThreeSigma | [ThreeSigma-MapleSyrupRouter.pdf](https://github.com/maple-labs/syrup-router-private/blob/main/audits/ThreeSigma-MapleSyrupRouter.pdf) |
+| ThreeSigma | [ThreeSigma-MapleSyrupRouter.pdf](https://github.com/maple-labs/syrup-utils-private/blob/main/audits/ThreeSigma-MapleSyrupRouter.pdf) |
+| ThreeSigma | [ThreeSigma-Maple-Finance-Aug-2024.pdf](https://github.com/maple-labs/syrup-utils-private/blob/main/audits/ThreeSigma-Maple-Finance-Aug-2024.pdf) |
+| 0xMacro | [0xMacro-Maple-Finance-Aug-2024.pdf](https://github.com/maple-labs/syrup-utils-private/blob/main/audits/0xMacro-Maple-Finance-Aug-2024.pdf) |
 
 
 ## Bug Bounty
