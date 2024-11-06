@@ -1,19 +1,23 @@
 import * as fs from 'fs'
 import * as path from 'path'
+import dotenv from 'dotenv'
 
 import { parseAllocations } from './allocation-parser'
 import { createMerkleTree } from './merkle-tree'
 import { generateReport } from './report-generator'
 import { readMaxId } from './syrup-drip'
 
+// Load environment variables from .env file
+dotenv.config()
+
 // Generates a JSON token allocation report from an input CSV.
 async function main(): Promise<void> {
   if (process.env.ETH_RPC_URL! == null) {
-    throw Error('\'ETH_RPC_URL\' not set')
+    throw Error("'ETH_RPC_URL' not set")
   }
 
   if (process.env.SYRUP_DRIP! == null) {
-    throw Error('\'SYRUP_DRIP\' address not set')
+    throw Error("'SYRUP_DRIP' address not set")
   }
 
   const csvPath = process.argv[2]
