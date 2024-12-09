@@ -34,8 +34,8 @@ export async function parseAllocations(rows: string[], maxId: number): Promise<A
 // Converts a CSV row and an id into an allocation object.
 export async function parseAllocation(row: string, id: number): Promise<Allocation> {
     const columns = row.split(',')
-    const address = parseAddress(columns[0])
-    const amount = parseAmount(columns[1])
+    const address = parseAddress(columns[0]).trim()
+    const amount = parseAmount(columns[1]).trim()
 
     if (await isClaimed(id)) {
       throw Error('allocation id already exists')
