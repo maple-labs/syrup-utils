@@ -32,8 +32,19 @@ async function main(): Promise<void> {
 
   // Generate the token allocation report.
   const maxId = await readMaxId()
+
+  console.log(`Max ID: ${maxId}`)
+
+  console.log("Reading CSV file...")
+
   const allocations = await parseAllocations(rows, maxId)
+
+  console.log("Creating Merkle tree...")
+
   const merkleTree = createMerkleTree(allocations)
+
+  console.log("Generating JSON...")
+
   const report = generateReport(merkleTree, allocations)
 
   // Write the report into a JSON file.
