@@ -58,6 +58,56 @@ interface IGlobalsLike {
 
 }
 
+interface IProxiedLike {
+
+    function implementation() external view returns (address implementation_);
+
+    function upgrade(uint256 toVersion_, bytes calldata arguments_) external;
+
+}
+
+// NOTE: Needs to be defined after `IProxiedLike`.
+interface ILoanLike is IProxiedLike {
+
+    function acceptBorrower() external;
+
+    function acceptLender() external;
+
+    function acceptLoanTerms() external;
+
+    function acceptNewTerms(address refinancer_, uint256 deadline_, bytes[] calldata calls_)
+        external returns (bytes32 refinanceCommitment_);
+
+    function borrower() external view returns (address borrower_);
+
+    function factory() external view returns (address factory_);
+
+    function fundsAsset() external view returns (address fundsAsset_);
+
+    function globals() external view returns (address globals_);
+
+    function gracePeriod() external view returns (uint256 gracePeriod_);
+
+    function isImpaired() external view returns (bool isImpaired_);
+
+    function lender() external view returns (address lender_);
+
+    function paymentInterval() external view returns (uint256 paymentInterval_);
+
+    function principal() external view returns (uint256 principal_);
+
+    function proposeNewTerms(address refinancer_, uint256 deadline_, bytes[] calldata calls_)
+        external returns (bytes32 refinanceCommitment_);
+
+    function rejectNewTerms(address refinancer_, uint256 deadline_, bytes[] calldata calls_)
+        external returns (bytes32 refinanceCommitment_);
+
+    function setPendingBorrower(address pendingBorrower_) external;
+
+    function skim(address token_, address destination_) external returns (uint256 skimmed_);
+
+}
+
 interface IMigratorLike {
 
     function migrate(address receiver, uint256 mplAmount) external returns (uint256 syrupAmount);
