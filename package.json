@@ -6,7 +6,7 @@
     "node": ">=18.16"
   },
   "scripts": {
-    "generate": "source .env && ETH_RPC_URL=$ETH_RPC_URL SYRUP_DRIP=$SYRUP_DRIP ts-node scripts/allocation-generator/main.ts",
+    "generate": "npx ts-node scripts/allocation-generator/main.ts",
     "test": "jest scripts/allocation-generator",
     "validate": "./scripts/validate.sh"
   },

@@ -61,6 +61,18 @@ contract MockGlobals {
 
 }
 
+contract MockLoan {
+
+    address public borrower;
+
+    function __setBorrower(address borrower_) external {
+        borrower = borrower_;
+    }
+
+    function acceptLoanTerms() external {}
+    
+}
+
 contract MockMigrator {
 
     MockERC20 _mpl;

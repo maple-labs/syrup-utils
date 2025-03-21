@@ -28,3 +28,6 @@
 [submodule "modules/lite-psm"]
 	path = modules/lite-psm
 	url = git@github.com:makerdao/dss-lite-psm.git
+[submodule "modules/non-transparent-proxy"]
+	path = modules/non-transparent-proxy
+	url = git@github.com:maple-labs/non-transparent-proxy.git
