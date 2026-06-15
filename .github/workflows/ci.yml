@@ -15,6 +15,9 @@ jobs:
   yarn-install:
     name: Guarded Yarn install
     runs-on: ubuntu-latest
+    env:
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # actions/checkout v4
@@ -24,19 +27,36 @@ jobs:
         with:
           node-version: "24"
 
-      - name: Verify Yarn install guardrails
-        run: |
-          grep -qx "ignore-scripts true" .yarnrc
+      - name: Enable Corepack
+        run: corepack enable
 
-          corepack enable
-          corepack prepare yarn@1.22.22 --activate
-          test "$(yarn config get ignore-scripts)" = "true"
+      - name: Verify Yarn install guardrails
+        # Yarn Berry force-enables ANSI colors under CI, which wraps
+        # `config get` output in escape codes (e.g. `\e[33mfalse\e[39m`) and
+        # breaks the string comparisons below. Disable colorized output so the
+        # captured values are plain strings. (enableScripts/npmMinimalAgeGate
+        # are Berry-only settings, so `corepack yarn` pins Berry 4.x rather than
+        # the runner's preinstalled classic Yarn 1.22.x.)
+        env:
+          YARN_ENABLE_COLORS: "0"
+        run: |
+          set -euo pipefail
+
+          grep -qx "enableScripts: false" .yarnrc.yml
+          grep -qx "nodeLinker: node-modules" .yarnrc.yml
+          grep -qx "npmMinimalAgeGate: 10080" .yarnrc.yml
+
+          corepack yarn --version
+
+          enable_scripts="$(corepack yarn config get enableScripts)"
+          minimal_age_gate="$(corepack yarn config get npmMinimalAgeGate)"
+          echo "enableScripts=${enable_scripts} npmMinimalAgeGate=${minimal_age_gate}"
+
+          test "${enable_scripts}" = "false"
+          test "${minimal_age_gate}" = "10080"
 
       - name: Install dependencies
-        run: |
-          corepack enable
-          corepack prepare yarn@1.22.22 --activate
-          yarn install --frozen-lockfile --ignore-scripts --non-interactive
+        run: corepack yarn install --immutable
 
   # Run all tests.
   test:
