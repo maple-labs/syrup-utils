@@ -6,17 +6,67 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 jobs:
+
+  # Ensure Yarn installs use supply-chain guardrails.
+  yarn-install:
+    name: Guarded Yarn install
+    runs-on: ubuntu-latest
+    env:
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # actions/checkout v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # actions/setup-node v4
+        with:
+          node-version: "24"
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Verify Yarn install guardrails
+        # Yarn Berry force-enables ANSI colors under CI, which wraps
+        # `config get` output in escape codes (e.g. `\e[33mfalse\e[39m`) and
+        # breaks the string comparisons below. Disable colorized output so the
+        # captured values are plain strings. (enableScripts/npmMinimalAgeGate
+        # are Berry-only settings, so `corepack yarn` pins Berry 4.x rather than
+        # the runner's preinstalled classic Yarn 1.22.x.)
+        env:
+          YARN_ENABLE_COLORS: "0"
+        run: |
+          set -euo pipefail
+
+          grep -qx "enableScripts: false" .yarnrc.yml
+          grep -qx "nodeLinker: node-modules" .yarnrc.yml
+          grep -qx "npmMinimalAgeGate: 10080" .yarnrc.yml
+
+          corepack yarn --version
+
+          enable_scripts="$(corepack yarn config get enableScripts)"
+          minimal_age_gate="$(corepack yarn config get npmMinimalAgeGate)"
+          echo "enableScripts=${enable_scripts} npmMinimalAgeGate=${minimal_age_gate}"
+
+          test "${enable_scripts}" = "false"
+          test "${minimal_age_gate}" = "10080"
+
+      - name: Install dependencies
+        run: corepack yarn install --immutable
 
   # Run all tests.
   test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # actions/checkout v4
 
       - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
+        uses: foundry-rs/foundry-toolchain@c7450ba673e133f5ee30098b3b54f444d3a2ca2d # foundry-rs/foundry-toolchain v1
         with:
           version: nightly
 
@@ -37,7 +87,7 @@ jobs:
           FORGE_GAS_REPORT: true
           FOUNDRY_PROFILE: ${{ github.event_name == 'push' && 'ci' || '' }}
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # actions/upload-artifact v4
         with:
           name: gas-report
           path: gas.txt
@@ -48,10 +98,10 @@ jobs:
     needs: [test]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # actions/checkout v4
 
       - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
+        uses: foundry-rs/foundry-toolchain@c7450ba673e133f5ee30098b3b54f444d3a2ca2d # foundry-rs/foundry-toolchain v1
         with:
           version: nightly
 
@@ -70,12 +120,16 @@ jobs:
   coverage:
     runs-on: ubuntu-latest
     needs: [test]
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # actions/checkout v4
 
       - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
+        uses: foundry-rs/foundry-toolchain@c7450ba673e133f5ee30098b3b54f444d3a2ca2d # foundry-rs/foundry-toolchain v1
         with:
           version: nightly
 
@@ -97,7 +151,7 @@ jobs:
           FOUNDRY_PROFILE: ${{ github.event_name == 'push' && 'ci' || '' }}
 
       - name: Report code coverage
-        uses: zgosalvez/github-actions-report-lcov@v4.1.22
+        uses: zgosalvez/github-actions-report-lcov@5989987f8058a03137e90bc16f9c0baaac5e069a # zgosalvez/github-actions-report-lcov v4.1.22
         with:
           coverage-files: lcov.info.pruned
           minimum-coverage: 100
@@ -110,13 +164,17 @@ jobs:
   gas:
     runs-on: ubuntu-latest
     needs: [test]
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # actions/download-artifact v4
         with:
           name: gas-report
           path: gas.txt
 
-      - uses: mshick/add-pr-comment@v2
+      - uses: mshick/add-pr-comment@b8f338c590a895d50bcbfa6c5859251edc8952fc # mshick/add-pr-comment v2
         with:
           message-path: gas.txt
           preformatted: true

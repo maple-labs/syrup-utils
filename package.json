@@ -2,6 +2,7 @@
   "name": "@maplelabs/syrup-utils-private",
   "version": "0.1.0",
   "description": "Scripts for generating Merkle proofs",
+  "packageManager": "yarn@4.16.0",
   "engines": {
     "node": ">=18.16"
   },
