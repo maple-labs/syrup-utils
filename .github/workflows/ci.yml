@@ -6,17 +6,47 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 jobs:
+
+  # Ensure Yarn installs use supply-chain guardrails.
+  yarn-install:
+    name: Guarded Yarn install
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # actions/checkout v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # actions/setup-node v4
+        with:
+          node-version: "24"
+
+      - name: Verify Yarn install guardrails
+        run: |
+          grep -qx "ignore-scripts true" .yarnrc
+
+          corepack enable
+          corepack prepare yarn@1.22.22 --activate
+          test "$(yarn config get ignore-scripts)" = "true"
+
+      - name: Install dependencies
+        run: |
+          corepack enable
+          corepack prepare yarn@1.22.22 --activate
+          yarn install --frozen-lockfile --ignore-scripts --non-interactive
 
   # Run all tests.
   test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # actions/checkout v4
 
       - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
+        uses: foundry-rs/foundry-toolchain@c7450ba673e133f5ee30098b3b54f444d3a2ca2d # foundry-rs/foundry-toolchain v1
         with:
           version: nightly
 
@@ -37,7 +67,7 @@ jobs:
           FORGE_GAS_REPORT: true
           FOUNDRY_PROFILE: ${{ github.event_name == 'push' && 'ci' || '' }}
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # actions/upload-artifact v4
         with:
           name: gas-report
           path: gas.txt
@@ -48,10 +78,10 @@ jobs:
     needs: [test]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # actions/checkout v4
 
       - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
+        uses: foundry-rs/foundry-toolchain@c7450ba673e133f5ee30098b3b54f444d3a2ca2d # foundry-rs/foundry-toolchain v1
         with:
           version: nightly
 
@@ -70,12 +100,16 @@ jobs:
   coverage:
     runs-on: ubuntu-latest
     needs: [test]
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # actions/checkout v4
 
       - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
+        uses: foundry-rs/foundry-toolchain@c7450ba673e133f5ee30098b3b54f444d3a2ca2d # foundry-rs/foundry-toolchain v1
         with:
           version: nightly
 
@@ -97,7 +131,7 @@ jobs:
           FOUNDRY_PROFILE: ${{ github.event_name == 'push' && 'ci' || '' }}
 
       - name: Report code coverage
-        uses: zgosalvez/github-actions-report-lcov@v4.1.22
+        uses: zgosalvez/github-actions-report-lcov@5989987f8058a03137e90bc16f9c0baaac5e069a # zgosalvez/github-actions-report-lcov v4.1.22
         with:
           coverage-files: lcov.info.pruned
           minimum-coverage: 100
@@ -110,13 +144,17 @@ jobs:
   gas:
     runs-on: ubuntu-latest
     needs: [test]
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # actions/download-artifact v4
         with:
           name: gas-report
           path: gas.txt
 
-      - uses: mshick/add-pr-comment@v2
+      - uses: mshick/add-pr-comment@b8f338c590a895d50bcbfa6c5859251edc8952fc # mshick/add-pr-comment v2
         with:
           message-path: gas.txt
           preformatted: true
